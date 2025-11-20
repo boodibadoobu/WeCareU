@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  COUNSELOR
+  STUDENT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum SessionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum StressCategory {
+  NORMAL
+  RINGAN
+  SEDANG
+  BERAT
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  full_name     String
+  nim           String?   @unique // Only for students
+  email         String?   @unique // Optional, for counselors/admin
+  role          Role
+  password_hash String
+  status        UserStatus @default(PENDING)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  counselor_details CounselorDetails?
+  student_sessions  Session[] @relation("StudentSessions")
+  counselor_sessions Session[] @relation("CounselorSessions")
+  chat_messages     ChatMessage[]
+  stress_tests      StressTest[]
+  articles          Article[]
+  notifications     Notification[]
+  
+  // Admin actions
+  approved_verifications VerificationAudit[] @relation("AdminApprover")
+  target_verifications   VerificationAudit[] @relation("TargetUser")
+}
+
+model CounselorDetails {
+  id               Int      @id @default(autoincrement())
+  user_id          Int      @unique
+  user             User     @relation(fields: [user_id], references: [id])
+  specialization   String
+  bio              String?  @db.Text
+  education        String?
+  years_experience Int
+  available_days   Json     // e.g. ["Monday", "Wednesday"]
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+model VerificationAudit {
+  id             Int      @id @default(autoincrement())
+  target_user_id Int
+  target_user    User     @relation("TargetUser", fields: [target_user_id], references: [id])
+  admin_id       Int
+  admin          User     @relation("AdminApprover", fields: [admin_id], references: [id])
+  action         String   // APPROVE, REJECT
+  reason         String?  @db.Text
+  created_at     DateTime @default(now())
+}
+
+model Session {
+  id               Int           @id @default(autoincrement())
+  student_id       Int
+  student          User          @relation("StudentSessions", fields: [student_id], references: [id])
+  counselor_id     Int
+  counselor        User          @relation("CounselorSessions", fields: [counselor_id], references: [id])
+  scheduled_start  DateTime
+  scheduled_end    DateTime
+  status           SessionStatus @default(PENDING)
+  reschedule_count Int           @default(0)
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  // Relations
+  notes            SessionNote?
+  chat_session     ChatSession?
+}
+
+model SessionNote {
+  id           Int      @id @default(autoincrement())
+  session_id   Int      @unique
+  session      Session  @relation(fields: [session_id], references: [id])
+  counselor_id Int
+  notes        String   @db.Text
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+}
+
+model ChatSession {
+  id         Int           @id @default(autoincrement())
+  session_id Int           @unique
+  session    Session       @relation(fields: [session_id], references: [id])
+  messages   ChatMessage[]
+  created_at DateTime      @default(now())
+}
+
+model ChatMessage {
+  id              Int         @id @default(autoincrement())
+  chat_session_id Int
+  chat_session    ChatSession @relation(fields: [chat_session_id], references: [id])
+  sender_id       Int
+  sender          User        @relation(fields: [sender_id], references: [id])
+  message_text    String      @db.Text
+  is_read         Boolean     @default(false)
+  sent_at         DateTime    @default(now())
+}
+
+model AnonChatSession {
+  id           Int               @id @default(autoincrement())
+  anon_token   String
+  student_id   Int?              // Track student for history, but hidden from counselor
+  counselor_id Int
+  status       String            @default("OPEN") // OPEN, CLOSED
+  created_at   DateTime          @default(now())
+  closed_at    DateTime?
+  messages     AnonChatMessage[]
+}
+
+model AnonChatMessage {
+  id                   Int             @id @default(autoincrement())
+  anon_chat_session_id Int
+  anon_chat_session    AnonChatSession @relation(fields: [anon_chat_session_id], references: [id])
+  sender_type          String          // STUDENT, COUNSELOR
+  message_text         String          @db.Text
+  sent_at              DateTime        @default(now())
+}
+
+model StressQuestion {
+  id            Int                 @id @default(autoincrement())
+  question_text String
+  dimension     String?
+  answers       StressTestAnswer[]
+}
+
+model StressTest {
+  id          Int                @id @default(autoincrement())
+  student_id  Int
+  student     User               @relation(fields: [student_id], references: [id])
+  taken_at    DateTime           @default(now())
+  total_score Int
+  category    StressCategory
+  scale_name  String
+  answers     StressTestAnswer[]
+}
+
+model StressTestAnswer {
+  id             Int            @id @default(autoincrement())
+  stress_test_id Int
+  stress_test    StressTest     @relation(fields: [stress_test_id], references: [id])
+  question_id    Int
+  question       StressQuestion @relation(fields: [question_id], references: [id])
+  answer_value   Int // 0-3
+}
+
+model Article {
+  id            Int      @id @default(autoincrement())
+  title         String
+  content       String   @db.Text
+  category      String   @default("General")
+  thumbnail_url String?
+  author_id     Int
+  author        User     @relation(fields: [author_id], references: [id])
+  is_published  Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id])
+  type       String   // SESSION, STRESS_RESULT, SYSTEM
+  title      String
+  body       String   @db.Text
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+}
