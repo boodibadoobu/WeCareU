@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload } from 'lucide-react';
 
 const ArticleFormPage = () => {
     const { id } = useParams();
@@ -15,6 +15,8 @@ const ArticleFormPage = () => {
         content: '',
         is_published: true
     });
+    const [uploading, setUploading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     useEffect(() => {
         if (isEditMode) {
@@ -36,6 +38,39 @@ const ArticleFormPage = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setSelectedFile(e.target.files[0]);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!selectedFile) return;
+
+        setUploading(true);
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', selectedFile);
+
+        try {
+            const res = await api.post('/upload/image', formDataUpload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            // Set the uploaded image URL
+            const imageUrl = `http://localhost:3000${res.data.url}`;
+            setFormData((prev) => ({ ...prev, thumbnail_url: imageUrl }));
+            setSelectedFile(null);
+            alert('Image uploaded successfully!');
+        } catch (err) {
+            console.error(err);
+            alert('Failed to upload image');
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -109,6 +144,40 @@ const ArticleFormPage = () => {
                                 placeholder="https://example.com/image.jpg"
                             />
                         </div>
+                    </div>
+
+                    {/* Image Upload Section */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Or Upload Image from Computer
+                        </label>
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleUpload}
+                                disabled={!selectedFile || uploading}
+                                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {uploading ? 'Uploading...' : 'Upload'}
+                            </button>
+                        </div>
+                        {formData.thumbnail_url && (
+                            <div className="mt-4">
+                                <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                                <img
+                                    src={formData.thumbnail_url}
+                                    alt="Thumbnail preview"
+                                    className="w-full h-48 object-cover rounded-lg"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div>

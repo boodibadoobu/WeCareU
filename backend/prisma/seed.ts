@@ -153,10 +153,30 @@ async function main() {
 
     // 7. Articles
     const articlesData = [
-        { title: 'Understanding Anxiety', category: 'Anxiety', content: 'Anxiety is a normal emotion...' },
-        { title: 'Tips for Better Sleep', category: 'Self-Care', content: 'Sleep is essential...' },
-        { title: 'Coping with Academic Stress', category: 'Stress', content: 'Academic pressure is real...' },
-        { title: 'Building Healthy Relationships', category: 'Relationships', content: 'Communication is key...' }
+        {
+            title: 'Understanding Anxiety',
+            category: 'Anxiety',
+            content: 'Anxiety is a normal emotion that everyone experiences from time to time. However, when anxiety becomes overwhelming or persistent, it can interfere with daily life. Learn about the signs, symptoms, and coping strategies for managing anxiety effectively.',
+            thumbnail: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&h=600&fit=crop'
+        },
+        {
+            title: 'Tips for Better Sleep',
+            category: 'Self-Care',
+            content: 'Sleep is essential for mental and physical health. Quality sleep helps improve mood, concentration, and overall well-being. Discover practical tips for establishing a healthy sleep routine and overcoming common sleep challenges.',
+            thumbnail: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&h=600&fit=crop'
+        },
+        {
+            title: 'Coping with Academic Stress',
+            category: 'Stress',
+            content: 'Academic pressure is real and can significantly impact student mental health. Learn effective strategies for managing study stress, maintaining work-life balance, and seeking support when needed.',
+            thumbnail: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=600&fit=crop'
+        },
+        {
+            title: 'Building Healthy Relationships',
+            category: 'Relationships',
+            content: 'Communication is key to building and maintaining healthy relationships. Explore the fundamentals of effective communication, setting boundaries, and nurturing meaningful connections with others.',
+            thumbnail: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=600&fit=crop'
+        }
     ];
 
     for (const art of articlesData) {
@@ -169,7 +189,7 @@ async function main() {
                     category: art.category,
                     author_id: admin.id,
                     is_published: true,
-                    thumbnail_url: 'https://source.unsplash.com/random/800x600/?mental-health'
+                    thumbnail_url: art.thumbnail
                 }
             });
         }

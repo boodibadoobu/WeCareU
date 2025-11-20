@@ -9,6 +9,7 @@ import sessionRoutes from './routes/sessionRoutes';
 import anonChatRoutes from './routes/anonChatRoutes';
 import stressTestRoutes from './routes/stressTestRoutes';
 import articleRoutes from './routes/articleRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 import { initSocket } from './socket';
 
 dotenv.config();
@@ -22,6 +23,7 @@ initSocket(httpServer);
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static('uploads')); // Serve uploaded files
 
 import notificationRoutes from './routes/notificationRoutes';
 
@@ -34,6 +36,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/anon-chat', anonChatRoutes);
 app.use('/api/stress-test', stressTestRoutes);
 app.use('/api/articles', articleRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {

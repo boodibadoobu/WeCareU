@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { Link } from 'react-router-dom';
-import { BookOpen, User } from 'lucide-react';
+import { BookOpen, User, Plus } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface Article {
     id: number;
@@ -15,6 +16,7 @@ interface Article {
 }
 
 const ArticleListPage = () => {
+    const { user } = useAuth();
     const [articles, setArticles] = useState<Article[]>([]);
 
     useEffect(() => {
@@ -30,6 +32,8 @@ const ArticleListPage = () => {
         }
     };
 
+    const canCreateArticle = user?.role === 'ADMIN' || user?.role === 'COUNSELOR';
+
     return (
         <div className="max-w-5xl mx-auto mt-8 mb-12">
             <div className="flex items-center justify-between mb-8">
@@ -37,7 +41,15 @@ const ArticleListPage = () => {
                     <h1 className="text-3xl font-bold text-gray-800">Mental Health Articles</h1>
                     <p className="text-gray-500 mt-1">Read the latest insights and tips from our professionals.</p>
                 </div>
-                {/* Add 'Create Article' button here if user is Counselor/Admin (can be handled by checking role in context) */}
+                {canCreateArticle && (
+                    <Link
+                        to="/articles/new"
+                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                    >
+                        <Plus className="h-5 w-5 mr-2" />
+                        Create Article
+                    </Link>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
