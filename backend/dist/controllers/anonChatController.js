@@ -12,27 +12,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAnonSession = exports.createAnonSession = void 0;
+exports.getStudentAnonSessions = exports.getCounselorAnonSessions = exports.getAnonSession = exports.createAnonSession = void 0;
 const prisma_1 = __importDefault(require("../utils/prisma"));
 const uuid_1 = require("uuid");
 // Create Anonymous Session (Student)
 const createAnonSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // No auth required for student side in theory, but for this app maybe we require student login?
-    // Requirement says "Anonymous Chat (non-login or login but hidden)".
-    // Let's assume logged in student but identity hidden from counselor.
-    // Or completely public?
-    // "Mahasiswa dapat melakukan konsultasi secara anonim".
-    // If they are logged in, we can hide their name.
-    // If they are not logged in, we need a public endpoint.
-    // Let's assume they are logged in for simplicity of access control, but we don't link `student_id` to the session visibly.
-    // Actually, `AnonChatSession` in schema doesn't have `student_id`. It has `anon_token`.
+    var _a;
     try {
         const anonToken = (0, uuid_1.v4)();
+        const studentId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get student ID from authenticated user
         const session = yield prisma_1.default.anonChatSession.create({
             data: {
                 anon_token: anonToken,
-                counselor_id: req.body.counselor_id, // Optional: pick a counselor or random?
-                // Schema says counselor_id is Int. So they must pick one.
+                student_id: studentId,
+                counselor_id: req.body.counselor_id,
                 status: 'OPEN'
             }
         });
@@ -43,7 +36,7 @@ const createAnonSession = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.createAnonSession = createAnonSession;
-// Get Anon Session (for Counselor)
+// Get Anon Session (for Counselor or Student)
 const getAnonSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
@@ -58,3 +51,52 @@ const getAnonSession = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.getAnonSession = getAnonSession;
+// Get All Anon Sessions for Counselor
+const getCounselorAnonSessions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const counselorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    try {
+        const sessions = yield prisma_1.default.anonChatSession.findMany({
+            where: {
+                counselor_id: counselorId,
+                status: 'OPEN'
+            },
+            include: {
+                messages: {
+                    orderBy: { sent_at: 'desc' },
+                    take: 1
+                }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(sessions);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching anonymous sessions' });
+    }
+});
+exports.getCounselorAnonSessions = getCounselorAnonSessions;
+// Get Student's Anon Chat History
+const getStudentAnonSessions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const studentId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    try {
+        const sessions = yield prisma_1.default.anonChatSession.findMany({
+            where: {
+                student_id: studentId
+            },
+            include: {
+                messages: {
+                    orderBy: { sent_at: 'desc' },
+                    take: 1
+                }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(sessions);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching anonymous chat history' });
+    }
+});
+exports.getStudentAnonSessions = getStudentAnonSessions;

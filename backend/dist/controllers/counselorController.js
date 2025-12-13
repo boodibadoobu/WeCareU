@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCounselorActivity = exports.updateSessionStatus = exports.getSessionRequests = exports.getCounselors = void 0;
+exports.getCounselorActivity = exports.rejectSession = exports.approveSession = exports.updateSessionStatus = exports.getSessionRequests = exports.getCounselors = void 0;
 const prisma_1 = __importDefault(require("../utils/prisma"));
 // Get all counselors (for students to browse)
 const getCounselors = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -68,10 +68,55 @@ const updateSessionStatus = (req, res) => __awaiter(void 0, void 0, void 0, func
         res.json({ message: `Session ${newStatus}` });
     }
     catch (error) {
+        console.error('Error updating session:', error);
         res.status(500).json({ message: 'Error updating session' });
     }
 });
 exports.updateSessionStatus = updateSessionStatus;
+// Approve session
+const approveSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { id } = req.params;
+    const counselorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    try {
+        const session = yield prisma_1.default.session.findUnique({ where: { id: Number(id) } });
+        if (!session || session.counselor_id !== counselorId) {
+            return res.status(404).json({ message: 'Session not found or unauthorized' });
+        }
+        yield prisma_1.default.session.update({
+            where: { id: Number(id) },
+            data: { status: 'APPROVED' }
+        });
+        res.json({ message: 'Session APPROVED' });
+    }
+    catch (error) {
+        console.error('Error approving session:', error);
+        res.status(500).json({ message: 'Error approving session' });
+    }
+});
+exports.approveSession = approveSession;
+// Reject session
+const rejectSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { id } = req.params;
+    const counselorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    try {
+        const session = yield prisma_1.default.session.findUnique({ where: { id: Number(id) } });
+        if (!session || session.counselor_id !== counselorId) {
+            return res.status(404).json({ message: 'Session not found or unauthorized' });
+        }
+        yield prisma_1.default.session.update({
+            where: { id: Number(id) },
+            data: { status: 'REJECTED' }
+        });
+        res.json({ message: 'Session REJECTED' });
+    }
+    catch (error) {
+        console.error('Error rejecting session:', error);
+        res.status(500).json({ message: 'Error rejecting session' });
+    }
+});
+exports.rejectSession = rejectSession;
 // Get My Activity (History)
 const getCounselorActivity = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;

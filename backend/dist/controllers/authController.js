@@ -37,7 +37,7 @@ const registerStudent = (req, res) => __awaiter(void 0, void 0, void 0, function
                 nim,
                 role: 'STUDENT',
                 password_hash: hashedPassword,
-                status: 'PENDING' // Students might need verification too, or auto-active. Spec says "Admin - Verifikasi akun konselor & mahasiswa", so PENDING.
+                status: 'ACTIVE' // Students are now active by default per user request
             }
         });
         res.status(201).json({ message: 'Registration successful. Please wait for admin verification.', userId: user.id });

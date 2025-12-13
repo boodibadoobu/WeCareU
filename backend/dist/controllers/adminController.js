@@ -12,55 +12,57 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUser = exports.verifyUser = exports.getPendingUsers = void 0;
-const bcrypt_1 = __importDefault(require("bcrypt"));
+exports.getDashboardStats = exports.createUser = exports.verifyUser = exports.getPendingUsers = void 0;
 const prisma_1 = __importDefault(require("../utils/prisma"));
-// Get pending users
+const bcrypt_1 = __importDefault(require("bcrypt"));
+// Get Pending Users
 const getPendingUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const users = yield prisma_1.default.user.findMany({
+        const pendingUsers = yield prisma_1.default.user.findMany({
             where: { status: 'PENDING' },
-            select: { id: true, full_name: true, nim: true, email: true, role: true, created_at: true }
+            select: {
+                id: true,
+                full_name: true,
+                email: true,
+                role: true,
+                created_at: true,
+                counselor_details: true
+            }
         });
-        res.json(users);
+        res.json(pendingUsers);
     }
     catch (error) {
         res.status(500).json({ message: 'Error fetching pending users' });
     }
 });
 exports.getPendingUsers = getPendingUsers;
-// Verify user (Approve/Reject)
+// Verify User (Approve/Reject)
 const verifyUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const { id } = req.params;
+    const { userId } = req.params;
     const { action, reason } = req.body; // action: 'APPROVE' | 'REJECT'
     const adminId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-    if (!adminId)
-        return res.status(401).json({ message: 'Unauthorized' });
     try {
-        const targetUser = yield prisma_1.default.user.findUnique({ where: { id: Number(id) } });
-        if (!targetUser)
+        const user = yield prisma_1.default.user.findUnique({ where: { id: Number(userId) } });
+        if (!user)
             return res.status(404).json({ message: 'User not found' });
         if (action === 'APPROVE') {
             yield prisma_1.default.user.update({
-                where: { id: Number(id) },
+                where: { id: Number(userId) },
                 data: { status: 'ACTIVE' }
             });
         }
         else if (action === 'REJECT') {
-            // Optionally delete or mark suspended
+            // Optionally delete or mark as suspended
             yield prisma_1.default.user.update({
-                where: { id: Number(id) },
+                where: { id: Number(userId) },
                 data: { status: 'SUSPENDED' }
             });
         }
-        else {
-            return res.status(400).json({ message: 'Invalid action' });
-        }
-        // Log audit
+        // Audit Log
         yield prisma_1.default.verificationAudit.create({
             data: {
-                target_user_id: Number(id),
+                target_user_id: Number(userId),
                 admin_id: adminId,
                 action,
                 reason
@@ -69,12 +71,11 @@ const verifyUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.json({ message: `User ${action}D successfully` });
     }
     catch (error) {
-        console.error(error);
         res.status(500).json({ message: 'Error verifying user' });
     }
 });
 exports.verifyUser = verifyUser;
-// Create Admin/Counselor (Seed or Admin Panel)
+// Create User (Admin/Counselor)
 const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { full_name, email, password, role, specialization } = req.body;
     try {
@@ -83,21 +84,18 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             data: {
                 full_name,
                 email,
-                role, // ADMIN or COUNSELOR
                 password_hash: hashedPassword,
-                status: 'ACTIVE'
+                role,
+                status: 'ACTIVE',
+                counselor_details: role === 'COUNSELOR' ? {
+                    create: {
+                        specialization: specialization || 'General',
+                        years_experience: 0,
+                        available_days: []
+                    }
+                } : undefined
             }
         });
-        if (role === 'COUNSELOR' && specialization) {
-            yield prisma_1.default.counselorDetails.create({
-                data: {
-                    user_id: user.id,
-                    specialization,
-                    years_experience: 0,
-                    available_days: []
-                }
-            });
-        }
         res.status(201).json(user);
     }
     catch (error) {
@@ -105,3 +103,26 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.createUser = createUser;
+// Get Dashboard Stats
+const getDashboardStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const [totalStudents, totalCounselors, pendingVerifications, totalSessions, completedSessions] = yield Promise.all([
+            prisma_1.default.user.count({ where: { role: 'STUDENT' } }),
+            prisma_1.default.user.count({ where: { role: 'COUNSELOR' } }),
+            prisma_1.default.user.count({ where: { status: 'PENDING' } }),
+            prisma_1.default.session.count(),
+            prisma_1.default.session.count({ where: { status: 'COMPLETED' } })
+        ]);
+        res.json({
+            totalStudents,
+            totalCounselors,
+            pendingVerifications,
+            totalSessions,
+            completedSessions
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching stats' });
+    }
+});
+exports.getDashboardStats = getDashboardStats;
