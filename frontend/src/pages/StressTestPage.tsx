@@ -58,7 +58,9 @@ const StressTestPage = () => {
             }));
 
             const res = await api.post('/stress-test/submit', { answers: payload });
-            setResult(res.data);
+            // Backend returns { message, data: { id, total_score, category, ... } }
+            // We need to extract the data property
+            setResult(res.data.data);
             setSubmitted(true);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to submit test');
