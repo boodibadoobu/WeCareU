@@ -1,22 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import api from '../api/axios';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
+import ErrorAlert from '../components/ErrorAlert';
+
+interface ArticleFormData {
+    title: string;
+    category: string;
+    thumbnail_url: string;
+    content: string;
+    is_published: boolean;
+}
 
 const ArticleFormPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
 
-    const [formData, setFormData] = useState({
-        title: '',
-        category: 'General',
-        thumbnail_url: '',
-        content: '',
-        is_published: true
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ArticleFormData>({
+        defaultValues: {
+            title: '',
+            category: 'General',
+            thumbnail_url: '',
+            content: '',
+            is_published: true
+        }
     });
+
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const thumbnailUrl = watch('thumbnail_url');
 
     useEffect(() => {
         if (isEditMode) {
@@ -26,18 +43,21 @@ const ArticleFormPage = () => {
 
     const fetchArticle = async () => {
         try {
+            setLoading(true);
             const res = await api.get(`/articles/${id}`);
             const { title, category, thumbnail_url, content, is_published } = res.data;
-            setFormData({ title, category, thumbnail_url: thumbnail_url || '', content, is_published });
-        } catch (err) {
-            console.error(err);
-            navigate('/articles');
-        }
-    };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+            setValue('title', title);
+            setValue('category', category);
+            setValue('thumbnail_url', thumbnail_url || '');
+            setValue('content', content);
+            setValue('is_published', is_published);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to load article');
+            setTimeout(() => navigate('/articles'), 2000);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +70,7 @@ const ArticleFormPage = () => {
         if (!selectedFile) return;
 
         setUploading(true);
+        setError(null);
         const formDataUpload = new FormData();
         formDataUpload.append('image', selectedFile);
 
@@ -60,36 +81,51 @@ const ArticleFormPage = () => {
                 }
             });
 
-            // Set the uploaded image URL
             const imageUrl = `http://localhost:3000${res.data.url}`;
-            setFormData((prev) => ({ ...prev, thumbnail_url: imageUrl }));
+            setValue('thumbnail_url', imageUrl);
             setSelectedFile(null);
-            alert('Image uploaded successfully!');
-        } catch (err) {
-            console.error(err);
-            alert('Failed to upload image');
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to upload image');
         } finally {
             setUploading(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: ArticleFormData) => {
         try {
+            setLoading(true);
+            setError(null);
+
             if (isEditMode) {
-                await api.put(`/articles/${id}`, formData);
+                await api.put(`/articles/${id}`, data);
             } else {
-                await api.post('/articles', formData);
+                await api.post('/articles', data);
             }
             navigate('/articles');
-        } catch (err) {
-            console.error(err);
-            alert('Failed to save article');
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to save article');
+        } finally {
+            setLoading(false);
         }
     };
 
+    if (loading && isEditMode) {
+        return (
+            <div className="max-w-3xl mx-auto mt-8 mb-12">
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <p className="text-gray-500">Loading article...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-3xl mx-auto mt-8 mb-12">
+            <ErrorAlert
+                message={error}
+                onClose={() => setError(null)}
+            />
+
             <button
                 onClick={() => navigate('/articles')}
                 className="flex items-center text-gray-500 hover:text-gray-800 mb-6 transition-colors"
@@ -103,27 +139,38 @@ const ArticleFormPage = () => {
                     {isEditMode ? 'Edit Article' : 'Create New Article'}
                 </h1>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Title <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleChange}
-                            required
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            {...register('title', {
+                                required: 'Title is required',
+                                minLength: {
+                                    value: 5,
+                                    message: 'Title must be at least 5 characters'
+                                },
+                                maxLength: {
+                                    value: 200,
+                                    message: 'Title must not exceed 200 characters'
+                                }
+                            })}
+                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.title ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             placeholder="Enter article title"
                         />
+                        {errors.title && (
+                            <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                             <select
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
+                                {...register('category')}
                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                             >
                                 <option value="General">General</option>
@@ -137,12 +184,19 @@ const ArticleFormPage = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail URL</label>
                             <input
                                 type="text"
-                                name="thumbnail_url"
-                                value={formData.thumbnail_url}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                {...register('thumbnail_url', {
+                                    pattern: {
+                                        value: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+                                        message: 'Invalid URL format'
+                                    }
+                                })}
+                                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.thumbnail_url ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="https://example.com/image.jpg"
                             />
+                            {errors.thumbnail_url && (
+                                <p className="text-xs text-red-500 mt-1">{errors.thumbnail_url.message}</p>
+                            )}
                         </div>
                     </div>
 
@@ -168,38 +222,51 @@ const ArticleFormPage = () => {
                                 {uploading ? 'Uploading...' : 'Upload'}
                             </button>
                         </div>
-                        {formData.thumbnail_url && (
+                        {thumbnailUrl && (
                             <div className="mt-4">
                                 <p className="text-sm text-gray-600 mb-2">Preview:</p>
                                 <img
-                                    src={formData.thumbnail_url}
+                                    src={thumbnailUrl}
                                     alt="Thumbnail preview"
                                     className="w-full h-48 object-cover rounded-lg"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Invalid+Image';
+                                    }}
                                 />
                             </div>
                         )}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Content <span className="text-red-500">*</span>
+                        </label>
                         <textarea
-                            name="content"
-                            value={formData.content}
-                            onChange={handleChange}
-                            required
+                            {...register('content', {
+                                required: 'Content is required',
+                                minLength: {
+                                    value: 50,
+                                    message: 'Content must be at least 50 characters'
+                                }
+                            })}
                             rows={10}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.content ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             placeholder="Write your article content here..."
                         />
+                        {errors.content && (
+                            <p className="text-xs text-red-500 mt-1">{errors.content.message}</p>
+                        )}
                     </div>
 
                     <div className="flex justify-end pt-4">
                         <button
                             type="submit"
-                            className="flex items-center bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            disabled={loading}
+                            className="flex items-center bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Save className="h-5 w-5 mr-2" />
-                            Save Article
+                            {loading ? 'Saving...' : 'Save Article'}
                         </button>
                     </div>
                 </form>

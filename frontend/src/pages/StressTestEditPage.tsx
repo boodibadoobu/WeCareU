@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { useNavigate } from 'react-router-dom';
-import { ClipboardList, CheckCircle } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ClipboardList, Save, ArrowLeft } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
 
 interface Question {
@@ -10,28 +10,45 @@ interface Question {
     dimension: string;
 }
 
-const StressTestPage = () => {
+interface Answer {
+    question_id: number;
+    answer_value: number;
+}
+
+const StressTestEditPage = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
     const [questions, setQuestions] = useState<Question[]>([]);
     const [answers, setAnswers] = useState<{ [key: number]: number }>({});
-    const [submitted, setSubmitted] = useState(false);
-    const [result, setResult] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
-        fetchQuestions();
-    }, []);
+        fetchTestData();
+    }, [id]);
 
-    const fetchQuestions = async () => {
+    const fetchTestData = async () => {
         try {
             setLoading(true);
             setError(null);
-            const res = await api.get('/stress-test/questions');
-            setQuestions(res.data);
+
+            // Fetch questions
+            const questionsRes = await api.get('/stress-test/questions');
+            setQuestions(questionsRes.data);
+
+            // Fetch existing test answers
+            const testRes = await api.get(`/stress-test/${id}`);
+            const existingAnswers: { [key: number]: number } = {};
+
+            testRes.data.answers.forEach((answer: Answer) => {
+                existingAnswers[answer.question_id] = answer.answer_value;
+            });
+
+            setAnswers(existingAnswers);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to load questions');
+            setError(err.response?.data?.message || 'Failed to load test data');
+            setTimeout(() => navigate('/stress-test/history'), 2000);
         } finally {
             setLoading(false);
         }
@@ -42,14 +59,14 @@ const StressTestPage = () => {
     };
 
     const handleSubmit = async () => {
-        // Validation: Check if all questions are answered
+        // Validation
         if (Object.keys(answers).length !== questions.length) {
             setError('Please answer all questions before submitting');
             return;
         }
 
         try {
-            setSubmitting(true);
+            setSaving(true);
             setError(null);
 
             const payload = Object.entries(answers).map(([qId, val]) => ({
@@ -57,13 +74,12 @@ const StressTestPage = () => {
                 answer_value: val
             }));
 
-            const res = await api.post('/stress-test/submit', { answers: payload });
-            setResult(res.data);
-            setSubmitted(true);
+            await api.put(`/stress-test/${id}`, { answers: payload });
+            navigate('/stress-test/history');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to submit test');
+            setError(err.response?.data?.message || 'Failed to update test');
         } finally {
-            setSubmitting(false);
+            setSaving(false);
         }
     };
 
@@ -71,51 +87,12 @@ const StressTestPage = () => {
         return (
             <div className="max-w-3xl mx-auto mt-8 mb-12">
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                    <p className="text-gray-500">Loading questions...</p>
+                    <p className="text-gray-500">Loading test data...</p>
                 </div>
             </div>
         );
     }
 
-    if (submitted && result) {
-        return (
-            <div className="max-w-2xl mx-auto mt-10 bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                <div className="flex justify-center mb-6">
-                    <CheckCircle className="h-16 w-16 text-green-500" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Test Completed</h2>
-                <p className="text-gray-600 mb-6">Your stress level has been analyzed.</p>
-
-                <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                    <p className="text-sm text-gray-500 uppercase tracking-wide font-semibold mb-2">Result Category</p>
-                    <p className={`text-4xl font-bold ${result.category === 'NORMAL' ? 'text-green-600' :
-                        result.category === 'RINGAN' ? 'text-yellow-600' :
-                            result.category === 'SEDANG' ? 'text-orange-600' : 'text-red-600'
-                        }`}>
-                        {result.category}
-                    </p>
-                    <p className="text-gray-500 mt-2">Score: {result.total_score}</p>
-                </div>
-
-                <div className="flex justify-center gap-4">
-                    <button
-                        onClick={() => navigate('/student')}
-                        className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                    >
-                        Back to Dashboard
-                    </button>
-                    <button
-                        onClick={() => navigate('/sessions')}
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                        Book Consultation
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // Calculate progress
     const progress = questions.length > 0 ? (Object.keys(answers).length / questions.length) * 100 : 0;
 
     return (
@@ -125,14 +102,22 @@ const StressTestPage = () => {
                 onClose={() => setError(null)}
             />
 
+            <button
+                onClick={() => navigate('/stress-test/history')}
+                className="flex items-center text-gray-500 hover:text-gray-800 mb-6 transition-colors"
+            >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                Back to History
+            </button>
+
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex items-center mb-8">
-                    <div className="bg-green-100 p-3 rounded-lg mr-4">
-                        <ClipboardList className="h-8 w-8 text-green-600" />
+                    <div className="bg-blue-100 p-3 rounded-lg mr-4">
+                        <ClipboardList className="h-8 w-8 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-bold text-gray-800">Stress Level Assessment</h1>
-                        <p className="text-gray-500">Please answer the following questions honestly based on how you felt over the past week.</p>
+                        <h1 className="text-2xl font-bold text-gray-800">Edit Stress Test</h1>
+                        <p className="text-gray-500">You can edit your responses within 24 hours of taking the test</p>
                     </div>
                 </div>
 
@@ -144,7 +129,7 @@ const StressTestPage = () => {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -162,8 +147,8 @@ const StressTestPage = () => {
                                         key={val}
                                         onClick={() => handleAnswer(q.id, val)}
                                         className={`py-3 px-4 rounded-lg border transition-all ${answers[q.id] === val
-                                            ? 'bg-green-600 text-white border-green-600 ring-2 ring-green-200'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:bg-green-50'
+                                            ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-200'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:bg-blue-50'
                                             }`}
                                     >
                                         {val === 0 && 'Never'}
@@ -189,10 +174,11 @@ const StressTestPage = () => {
                     </p>
                     <button
                         onClick={handleSubmit}
-                        disabled={submitting || Object.keys(answers).length !== questions.length}
-                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-green-200"
+                        disabled={saving || Object.keys(answers).length !== questions.length}
+                        className="flex items-center bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-200"
                     >
-                        {submitting ? 'Submitting...' : 'Submit Assessment'}
+                        <Save className="h-5 w-5 mr-2" />
+                        {saving ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
             </div>
@@ -200,4 +186,4 @@ const StressTestPage = () => {
     );
 };
 
-export default StressTestPage;
+export default StressTestEditPage;

@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { User, Check, X, Shield } from 'lucide-react';
+import { Check, X, Edit, Trash2, Plus } from 'lucide-react';
+import UserFormModal from '../components/UserFormModal';
+import ConfirmDialog from '../components/ConfirmDialog';
+import ErrorAlert from '../components/ErrorAlert';
 
 interface UserData {
     id: number;
     full_name: string;
-    email: string;
-    role: string;
-    status: string;
+    email?: string;
     nim?: string;
+    role: 'ADMIN' | 'COUNSELOR' | 'STUDENT';
+    status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
 }
 
 const AdminUsersPage = () => {
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [editingUser, setEditingUser] = useState<UserData | null>(null);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -21,17 +29,19 @@ const AdminUsersPage = () => {
 
     const fetchUsers = async () => {
         try {
-            // Ideally we should have a dedicated endpoint for listing all users
-            // For now, we might reuse getPendingUsers or create a new one.
-            // Let's assume we'll add a getUsers endpoint or just show pending for now.
-            // Wait, the user wants to see "Users". Let's implement a proper list.
-            // Since we don't have a generic "get all users" endpoint yet, 
-            // I will add one to adminController in the next step.
-            // For now, I'll just fetch pending users to show something.
-            const res = await api.get('/admin/pending-users');
+            setLoading(true);
+            setError(null);
+            // Fetch all users (you may need to create this endpoint)
+            const res = await api.get('/admin/users');
             setUsers(res.data);
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            // Fallback to pending users if all users endpoint doesn't exist
+            try {
+                const res = await api.get('/admin/pending-users');
+                setUsers(res.data);
+            } catch (fallbackErr: any) {
+                setError(fallbackErr.response?.data?.message || 'Failed to load users');
+            }
         } finally {
             setLoading(false);
         }
@@ -39,32 +49,112 @@ const AdminUsersPage = () => {
 
     const handleVerify = async (id: number, action: 'APPROVE' | 'REJECT') => {
         try {
+            setError(null);
             await api.post('/admin/verify-user', { userId: id, action });
-            fetchUsers(); // Refresh list
-        } catch (err) {
-            console.error(err);
+            fetchUsers();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to verify user');
         }
+    };
+
+    const handleCreateUser = async (data: any) => {
+        try {
+            setError(null);
+            await api.post('/auth/register', data);
+            setShowUserModal(false);
+            fetchUsers();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to create user');
+        }
+    };
+
+    const handleEditUser = async (data: any) => {
+        if (!editingUser) return;
+
+        try {
+            setError(null);
+            await api.put(`/admin/users/${editingUser.id}`, data);
+            setShowUserModal(false);
+            setEditingUser(null);
+            fetchUsers();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to update user');
+        }
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteId) return;
+
+        try {
+            setDeleting(true);
+            setError(null);
+            await api.delete(`/admin/users/${deleteId}`);
+            setUsers(users.filter(u => u.id !== deleteId));
+            setDeleteId(null);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete user');
+            setDeleteId(null);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const openEditModal = (user: UserData) => {
+        setEditingUser(user);
+        setShowUserModal(true);
+    };
+
+    const closeModal = () => {
+        setShowUserModal(false);
+        setEditingUser(null);
     };
 
     return (
         <div className="max-w-6xl mx-auto mt-8 mb-12">
+            <ErrorAlert
+                message={error}
+                onClose={() => setError(null)}
+            />
+
+            <UserFormModal
+                isOpen={showUserModal}
+                onClose={closeModal}
+                onSubmit={editingUser ? handleEditUser : handleCreateUser}
+                initialData={editingUser || undefined}
+                isEdit={!!editingUser}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteId !== null}
+                title="Delete User"
+                message="Are you sure you want to delete this user? This action cannot be undone and will remove all associated data."
+                confirmText="Delete"
+                cancelText="Cancel"
+                type="danger"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteId(null)}
+            />
+
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
-                    <User className="h-5 w-5 mr-2" />
+                <button
+                    onClick={() => setShowUserModal(true)}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                >
+                    <Plus className="h-5 w-5 mr-2" />
                     Add User
                 </button>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-800">Pending Verifications</h2>
+                    <h2 className="text-lg font-semibold text-gray-800">All Users</h2>
                 </div>
 
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">Loading...</div>
                 ) : users.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">No pending users found.</div>
+                    <div className="p-8 text-center text-gray-500">No users found.</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -87,31 +177,57 @@ const AdminUsersPage = () => {
                                             {user.email || user.nim}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'COUNSELOR' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
+                                                user.role === 'COUNSELOR' ? 'bg-blue-100 text-blue-800' :
+                                                    'bg-green-100 text-green-800'
                                                 }`}>
                                                 {user.role}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                                                user.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
                                                 {user.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right space-x-2">
-                                            <button
-                                                onClick={() => handleVerify(user.id, 'APPROVE')}
-                                                className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                                                title="Approve"
-                                            >
-                                                <Check className="h-5 w-5" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleVerify(user.id, 'REJECT')}
-                                                className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                                                title="Reject"
-                                            >
-                                                <X className="h-5 w-5" />
-                                            </button>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                {user.status === 'PENDING' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleVerify(user.id, 'APPROVE')}
+                                                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
+                                                            title="Approve"
+                                                        >
+                                                            <Check className="h-5 w-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleVerify(user.id, 'REJECT')}
+                                                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                                            title="Reject"
+                                                        >
+                                                            <X className="h-5 w-5" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                <button
+                                                    onClick={() => openEditModal(user)}
+                                                    className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                                                    title="Edit"
+                                                >
+                                                    <Edit className="h-5 w-5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteId(user.id)}
+                                                    disabled={deleting}
+                                                    className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 disabled:opacity-50"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-5 w-5" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

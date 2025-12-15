@@ -19,6 +19,9 @@ import NotificationsPage from './pages/NotificationsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import CounselorAnonChatsPage from './pages/CounselorAnonChatsPage';
 import StudentAnonHistoryPage from './pages/StudentAnonHistoryPage';
+import StressTestHistoryPage from './pages/StressTestHistoryPage';
+import StressTestEditPage from './pages/StressTestEditPage';
+import AdminNotificationPage from './pages/AdminNotificationPage';
 
 // Placeholder Dashboards for Admin
 // const AdminDashboard = () => <div className="p-8 text-2xl">Admin Dashboard - Coming Soon</div>;
@@ -163,10 +166,34 @@ const App = () => {
           }
         />
         <Route
-          path="/articles/:id/edit"
+          path="/articles/edit/:id"
           element={
             <ProtectedRoute allowedRoles={['COUNSELOR', 'ADMIN']}>
               <ArticleFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stress-test/history"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StressTestHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stress-test/edit/:id"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StressTestEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications/create"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminNotificationPage />
             </ProtectedRoute>
           }
         />
