@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Calendar, TrendingUp, Eye, Edit } from 'lucide-react';
+import { ClipboardList, Calendar, TrendingUp, Eye, Edit, Trash2 } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
 
 interface StressTestResult {
@@ -16,6 +16,9 @@ const StressTestHistoryPage = () => {
     const [results, setResults] = useState<StressTestResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -26,8 +29,9 @@ const StressTestHistoryPage = () => {
         try {
             setLoading(true);
             setError(null);
-            const res = await api.get('/stress-test/history');
-            setResults(res.data);
+            const res = await api.get('/stress-test/my-results');
+            // Backend returns { message, data, count } structure
+            setResults(res.data.data || []);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to load test history');
         } finally {
@@ -62,6 +66,25 @@ const StressTestHistoryPage = () => {
         return hoursDiff < 24; // Can edit within 24 hours
     };
 
+    const handleDelete = async (id: number) => {
+        try {
+            setDeleting(true);
+            setError(null);
+            await api.delete(`/stress-test/my-results/${id}`);
+            setSuccessMessage('Stress test deleted successfully!');
+            setDeleteId(null);
+            // Refresh the list
+            fetchHistory();
+            // Auto-hide success message after 3 seconds
+            setTimeout(() => setSuccessMessage(null), 3000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete stress test');
+            setDeleteId(null);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto mt-8 mb-12">
@@ -78,6 +101,19 @@ const StressTestHistoryPage = () => {
                 message={error}
                 onClose={() => setError(null)}
             />
+
+            {/* Success Message */}
+            {successMessage && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center justify-between">
+                    <span className="font-medium">{successMessage}</span>
+                    <button
+                        onClick={() => setSuccessMessage(null)}
+                        className="text-green-600 hover:text-green-800"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
 
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center">
@@ -151,10 +187,51 @@ const StressTestHistoryPage = () => {
                                         <Eye className="h-4 w-4 mr-2" />
                                         View Details
                                     </button>
+                                    <button
+                                        onClick={() => setDeleteId(result.id)}
+                                        className="flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                        title="Delete this test"
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            {deleteId !== null && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+                        <div className="flex items-center mb-4">
+                            <div className="bg-red-100 p-3 rounded-full mr-4">
+                                <Trash2 className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-800">Delete Stress Test</h3>
+                        </div>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to delete this stress test result? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeleteId(null)}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDelete(deleteId)}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                                {deleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

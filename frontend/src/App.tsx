@@ -21,6 +21,7 @@ import CounselorAnonChatsPage from './pages/CounselorAnonChatsPage';
 import StudentAnonHistoryPage from './pages/StudentAnonHistoryPage';
 import StressTestHistoryPage from './pages/StressTestHistoryPage';
 import StressTestEditPage from './pages/StressTestEditPage';
+import StressTestMenuPage from './pages/StressTestMenuPage';
 import AdminNotificationPage from './pages/AdminNotificationPage';
 
 // Placeholder Dashboards for Admin
@@ -126,12 +127,24 @@ const App = () => {
           }
         />
         <Route
-          path="/stress-test"
+          path="/stress-test/menu"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StressTestMenuPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stress-test/new"
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <StressTestPage />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/stress-test"
+          element={<Navigate to="/stress-test/menu" replace />}
         />
         <Route
           path="/student/anon-history"
