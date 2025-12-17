@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../api/axios';
 import { Check, X, Edit, Trash2, Plus } from 'lucide-react';
 import UserFormModal from '../components/UserFormModal';
@@ -22,6 +22,7 @@ const AdminUsersPage = () => {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [activeTab, setActiveTab] = useState<'ALL' | 'STUDENT' | 'COUNSELOR'>('ALL');
 
     useEffect(() => {
         fetchUsers();
@@ -60,7 +61,7 @@ const AdminUsersPage = () => {
     const handleCreateUser = async (data: any) => {
         try {
             setError(null);
-            await api.post('/auth/register', data);
+            await api.post('/admin/users', data);
             setShowUserModal(false);
             fetchUsers();
         } catch (err: any) {
@@ -109,6 +110,11 @@ const AdminUsersPage = () => {
         setEditingUser(null);
     };
 
+    const filteredUsers = useMemo(() => {
+        if (activeTab === 'ALL') return users;
+        return users.filter(u => u.role === activeTab);
+    }, [users, activeTab]);
+
     return (
         <div className="max-w-6xl mx-auto mt-8 mb-12">
             <ErrorAlert
@@ -147,14 +153,68 @@ const AdminUsersPage = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-800">All Users</h2>
+                {/* Tabs */}
+                <div className="border-b border-gray-200">
+                    <nav className="flex -mb-px">
+                        <button
+                            onClick={() => setActiveTab('ALL')}
+                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ALL'
+                                ? 'border-green-600 text-green-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                        >
+                            All Users
+                            {users.length > 0 && (
+                                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                                    {users.length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('STUDENT')}
+                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'STUDENT'
+                                ? 'border-green-600 text-green-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                        >
+                            Students
+                            {users.filter(u => u.role === 'STUDENT').length > 0 && (
+                                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-600">
+                                    {users.filter(u => u.role === 'STUDENT').length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('COUNSELOR')}
+                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'COUNSELOR'
+                                ? 'border-green-600 text-green-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                        >
+                            Counselors
+                            {users.filter(u => u.role === 'COUNSELOR').length > 0 && (
+                                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
+                                    {users.filter(u => u.role === 'COUNSELOR').length}
+                                </span>
+                            )}
+                        </button>
+                    </nav>
+                </div>
+
+                <div className="p-6">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                        {activeTab === 'ALL' ? 'All Users' : activeTab === 'STUDENT' ? 'Students' : 'Counselors'}
+                    </h2>
                 </div>
 
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">Loading...</div>
                 ) : users.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">No users found.</div>
+                ) : filteredUsers.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                        No {activeTab === 'STUDENT' ? 'students' : 'counselors'} found.
+                    </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -168,7 +228,7 @@ const AdminUsersPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {users.map((user) => (
+                                {filteredUsers.map((user) => (
                                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-gray-900">{user.full_name}</div>
@@ -234,7 +294,8 @@ const AdminUsersPage = () => {
                             </tbody>
                         </table>
                     </div>
-                )}
+                )
+                }
             </div>
         </div>
     );

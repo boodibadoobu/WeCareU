@@ -22,6 +22,27 @@ export const getPendingUsers = async (req: Request, res: Response) => {
     }
 };
 
+// Get All Users (for user management)
+export const getAllUsers = async (req: Request, res: Response) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                full_name: true,
+                email: true,
+                nim: true,
+                role: true,
+                status: true,
+                created_at: true
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+};
+
 // Verify User (Approve/Reject)
 export const verifyUser = async (req: Request, res: Response) => {
     const { userId } = req.params;

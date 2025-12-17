@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma';
 
 export const registerStudent = async (req: Request, res: Response) => {
-    const { full_name, nim, password, confirm_password } = req.body;
+    const { full_name, nim, email, password, confirm_password } = req.body;
 
     if (password !== confirm_password) {
         res.status(400).json({ message: 'Passwords do not match' });
@@ -27,13 +27,14 @@ export const registerStudent = async (req: Request, res: Response) => {
             data: {
                 full_name,
                 nim,
+                email: email || null, // Email is optional
                 role: 'STUDENT',
                 password_hash: hashedPassword,
-                status: 'ACTIVE' // Students are now active by default per user request
+                status: 'PENDING' // Students need admin approval before login
             }
         });
 
-        res.status(201).json({ message: 'Registration successful. Please wait for admin verification.', userId: user.id });
+        res.status(201).json({ message: 'Registration successful! Please wait for admin approval before you can login.', userId: user.id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
