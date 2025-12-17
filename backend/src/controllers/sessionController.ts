@@ -109,3 +109,38 @@ export const rescheduleSession = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error rescheduling session' });
     }
 };
+
+// Delete Session (Student)
+export const deleteSession = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const studentId = req.user?.id;
+
+    try {
+        const session = await prisma.session.findUnique({ where: { id: Number(id) } });
+        
+        if (!session || session.student_id !== studentId) {
+            return res.status(404).json({ message: 'Session not found or unauthorized' });
+        }
+
+        // Only allow deletion if session is PENDING or not yet started
+        if (session.status === 'COMPLETED') {
+            return res.status(400).json({ message: 'Cannot delete completed sessions' });
+        }
+
+        const now = new Date();
+        const sessionStart = new Date(session.scheduled_start);
+        
+        if (now >= sessionStart) {
+            return res.status(400).json({ message: 'Cannot delete session that has already started' });
+        }
+
+        await prisma.session.delete({
+            where: { id: Number(id) }
+        });
+
+        res.json({ message: 'Session deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting session:', error);
+        res.status(500).json({ message: 'Error deleting session' });
+    }
+};

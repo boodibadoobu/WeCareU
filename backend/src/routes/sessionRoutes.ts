@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createSession, getMySessions, rescheduleSession } from '../controllers/sessionController';
+import { createSession, getMySessions, rescheduleSession, deleteSession } from '../controllers/sessionController';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware';
 import prisma from '../utils/prisma';
 
@@ -10,6 +10,7 @@ router.use(authenticateToken);
 router.post('/', requireRole(['STUDENT']), createSession);
 router.get('/my', requireRole(['STUDENT']), getMySessions);
 router.put('/:id/reschedule', requireRole(['STUDENT']), rescheduleSession);
+router.delete('/:id', requireRole(['STUDENT']), deleteSession);
 router.get('/:id/chat', async (req, res) => {
     const { id } = req.params;
     const userId = req.user?.id;

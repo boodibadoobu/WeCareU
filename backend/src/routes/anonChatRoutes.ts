@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createAnonSession, getAnonSession, getCounselorAnonSessions, getStudentAnonSessions } from '../controllers/anonChatController';
+import { createAnonSession, getAnonSession, getCounselorAnonSessions, getStudentAnonSessions, updateAnonSession, deleteAnonSession } from '../controllers/anonChatController';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -15,5 +15,11 @@ router.get('/counselor/sessions', authenticateToken, requireRole(['COUNSELOR']),
 
 // Counselor views specific session
 router.get('/:id', authenticateToken, requireRole(['COUNSELOR', 'STUDENT']), getAnonSession);
+
+// Update anonymous session status (close session)
+router.put('/:id', authenticateToken, requireRole(['COUNSELOR', 'STUDENT']), updateAnonSession);
+
+// Delete anonymous session (student only)
+router.delete('/:id', authenticateToken, requireRole(['STUDENT']), deleteAnonSession);
 
 export default router;
