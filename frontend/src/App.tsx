@@ -23,6 +23,7 @@ import StressTestHistoryPage from './pages/StressTestHistoryPage';
 import StressTestEditPage from './pages/StressTestEditPage';
 import StressTestMenuPage from './pages/StressTestMenuPage';
 import AdminNotificationPage from './pages/AdminNotificationPage';
+import AdminQuestionsPage from './pages/AdminQuestionsPage';
 
 // Placeholder Dashboards for Admin
 // const AdminDashboard = () => <div className="p-8 text-2xl">Admin Dashboard - Coming Soon</div>;
@@ -82,6 +83,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminUsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/questions"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminQuestionsPage />
             </ProtectedRoute>
           }
         />

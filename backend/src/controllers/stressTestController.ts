@@ -373,3 +373,65 @@ export const getStudentResults = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error fetching student results' });
     }
 };
+ 
+ 
+// ADMIN: Get All Questions (for management)
+export const getAllQuestionsAdmin = async (req: Request, res: Response) => {
+    try {
+        const questions = await prisma.stressQuestion.findMany({
+            orderBy: { id: 'asc' }
+        });
+        res.json({ message: 'Questions fetched successfully', data: questions });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching questions' });
+    }
+};
+
+// ADMIN: Create Question
+export const createQuestion = async (req: Request, res: Response) => {
+    const { question_text, dimension } = req.body;
+    if (!question_text || question_text.trim().length < 10) {
+        return res.status(400).json({ message: 'Question text must be at least 10 characters' });
+    }
+    try {
+        const question = await prisma.stressQuestion.create({
+            data: { question_text: question_text.trim(), dimension: dimension || 'general' }
+        });
+        res.status(201).json({ message: 'Question created successfully', data: question });
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating question' });
+    }
+};
+
+// ADMIN: Update Question
+export const updateQuestion = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { question_text, dimension } = req.body;
+    if (question_text && question_text.trim().length < 10) {
+        return res.status(400).json({ message: 'Question text must be at least 10 characters' });
+    }
+    try {
+        const question = await prisma.stressQuestion.update({
+            where: { id: Number(id) },
+            data: { question_text: question_text?.trim(), dimension: dimension }
+        });
+        res.json({ message: 'Question updated successfully', data: question });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating question' });
+    }
+};
+
+// ADMIN: Delete Question
+export const deleteQuestion = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const answerCount = await prisma.stressTestAnswer.count({ where: { question_id: Number(id) } });
+        if (answerCount > 0) {
+            return res.status(400).json({ message: Cannot delete question with  existing answers });
+        }
+        await prisma.stressQuestion.delete({ where: { id: Number(id) } });
+        res.json({ message: 'Question deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting question' });
+    }
+};
