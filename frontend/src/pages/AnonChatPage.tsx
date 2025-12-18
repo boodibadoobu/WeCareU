@@ -37,7 +37,10 @@ const AnonChatPage = () => {
             // Initialize Socket
             console.log('Initializing socket connection for session:', sessionId);
 
-            socketRef.current = io('http://localhost:3000', {
+            const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            console.log('Socket URL:', socketUrl);
+
+            socketRef.current = io(socketUrl, {
                 auth: { token }
             });
 

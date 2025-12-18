@@ -22,8 +22,10 @@ const ChatPage = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
         // Initialize Socket
-        socketRef.current = io('http://localhost:3000', {
+        socketRef.current = io(socketUrl, {
             auth: { token }
         });
 

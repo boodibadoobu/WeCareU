@@ -81,7 +81,8 @@ const ArticleFormPage = () => {
                 }
             });
 
-            const imageUrl = `http://localhost:3000${res.data.url}`;
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const imageUrl = `${apiUrl}${res.data.url}`;
             setValue('thumbnail_url', imageUrl);
             setSelectedFile(null);
         } catch (err: any) {
