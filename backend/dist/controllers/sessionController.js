@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rescheduleSession = exports.getMySessions = exports.createSession = void 0;
+exports.deleteSession = exports.rescheduleSession = exports.getMySessions = exports.createSession = void 0;
 const prisma_1 = __importDefault(require("../utils/prisma"));
 // Create Session (Student)
 const createSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -116,3 +116,33 @@ const rescheduleSession = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.rescheduleSession = rescheduleSession;
+// Delete Session (Student)
+const deleteSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { id } = req.params;
+    const studentId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    try {
+        const session = yield prisma_1.default.session.findUnique({ where: { id: Number(id) } });
+        if (!session || session.student_id !== studentId) {
+            return res.status(404).json({ message: 'Session not found or unauthorized' });
+        }
+        // Only allow deletion if session is PENDING or not yet started
+        if (session.status === 'COMPLETED') {
+            return res.status(400).json({ message: 'Cannot delete completed sessions' });
+        }
+        const now = new Date();
+        const sessionStart = new Date(session.scheduled_start);
+        if (now >= sessionStart) {
+            return res.status(400).json({ message: 'Cannot delete session that has already started' });
+        }
+        yield prisma_1.default.session.delete({
+            where: { id: Number(id) }
+        });
+        res.json({ message: 'Session deleted successfully' });
+    }
+    catch (error) {
+        console.error('Error deleting session:', error);
+        res.status(500).json({ message: 'Error deleting session' });
+    }
+});
+exports.deleteSession = deleteSession;

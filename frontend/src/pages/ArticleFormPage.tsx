@@ -147,7 +147,7 @@ const ArticleFormPage = () => {
                         <input
                             type="text"
                             {...register('title', {
-                                required: 'Title is required',
+                                required: 'Title cannot be empty',
                                 minLength: {
                                     value: 5,
                                     message: 'Title must be at least 5 characters'

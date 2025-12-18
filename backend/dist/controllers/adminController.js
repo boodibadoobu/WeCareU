@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDashboardStats = exports.createUser = exports.verifyUser = exports.getPendingUsers = void 0;
+exports.getDashboardStats = exports.createUser = exports.verifyUser = exports.getAllUsers = exports.getPendingUsers = void 0;
 const prisma_1 = __importDefault(require("../utils/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 // Get Pending Users
@@ -36,6 +36,28 @@ const getPendingUsers = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.getPendingUsers = getPendingUsers;
+// Get All Users (for user management)
+const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield prisma_1.default.user.findMany({
+            select: {
+                id: true,
+                full_name: true,
+                email: true,
+                nim: true,
+                role: true,
+                status: true,
+                created_at: true
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(users);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+});
+exports.getAllUsers = getAllUsers;
 // Verify User (Approve/Reject)
 const verifyUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;

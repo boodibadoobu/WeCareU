@@ -17,7 +17,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../utils/prisma"));
 const registerStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { full_name, nim, password, confirm_password } = req.body;
+    const { full_name, nim, email, password, confirm_password } = req.body;
     if (password !== confirm_password) {
         res.status(400).json({ message: 'Passwords do not match' });
         return;
@@ -35,12 +35,13 @@ const registerStudent = (req, res) => __awaiter(void 0, void 0, void 0, function
             data: {
                 full_name,
                 nim,
+                email: email || null, // Email is optional
                 role: 'STUDENT',
                 password_hash: hashedPassword,
-                status: 'ACTIVE' // Students are now active by default per user request
+                status: 'PENDING' // Students need admin approval before login
             }
         });
-        res.status(201).json({ message: 'Registration successful. Please wait for admin verification.', userId: user.id });
+        res.status(201).json({ message: 'Registration successful! Please wait for admin approval before you can login.', userId: user.id });
     }
     catch (error) {
         console.error(error);

@@ -21,6 +21,7 @@ router.use(authMiddleware_1.authenticateToken);
 router.post('/', (0, authMiddleware_1.requireRole)(['STUDENT']), sessionController_1.createSession);
 router.get('/my', (0, authMiddleware_1.requireRole)(['STUDENT']), sessionController_1.getMySessions);
 router.put('/:id/reschedule', (0, authMiddleware_1.requireRole)(['STUDENT']), sessionController_1.rescheduleSession);
+router.delete('/:id', (0, authMiddleware_1.requireRole)(['STUDENT']), sessionController_1.deleteSession);
 router.get('/:id/chat', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { id } = req.params;

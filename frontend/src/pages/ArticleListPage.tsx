@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { Link } from 'react-router-dom';
-import { BookOpen, User, Plus, Edit, Trash2 } from 'lucide-react';
+import { BookOpen, User, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
@@ -24,14 +24,16 @@ const ArticleListPage = () => {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchArticles();
-    }, []);
+    }, [searchQuery]);
 
     const fetchArticles = async () => {
         try {
-            const res = await api.get('/articles');
+            const queryParam = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+            const res = await api.get(`/articles${queryParam}`);
             setArticles(res.data);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to load articles');
@@ -101,6 +103,20 @@ const ArticleListPage = () => {
                 )}
             </div>
 
+            {/* Search Bar */}
+            <div className="mb-6">
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search articles by title or content..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {articles.map((article) => (
                     <div key={article.id} className="group relative">
@@ -162,7 +178,9 @@ const ArticleListPage = () => {
                 <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
                     <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-600">No articles found</h3>
-                    <p className="text-gray-400">Check back later for new content.</p>
+                    <p className="text-gray-400">
+                        {searchQuery ? `No results for "${searchQuery}". Try a different search.` : 'Check back later for new content.'}
+                    </p>
                 </div>
             )}
         </div>

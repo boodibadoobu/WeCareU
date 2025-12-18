@@ -5,6 +5,7 @@ const adminController_1 = require("../controllers/adminController");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = (0, express_1.Router)();
 router.get('/stats', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['ADMIN']), adminController_1.getDashboardStats);
+router.get('/users', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['ADMIN']), adminController_1.getAllUsers);
 router.get('/pending-users', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['ADMIN']), adminController_1.getPendingUsers);
 router.post('/verify/:userId', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['ADMIN']), adminController_1.verifyUser);
 router.post('/users', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['ADMIN']), adminController_1.createUser);

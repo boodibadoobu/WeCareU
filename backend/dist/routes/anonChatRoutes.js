@@ -12,4 +12,8 @@ router.get('/student/history', authMiddleware_1.authenticateToken, (0, authMiddl
 router.get('/counselor/sessions', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['COUNSELOR']), anonChatController_1.getCounselorAnonSessions);
 // Counselor views specific session
 router.get('/:id', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['COUNSELOR', 'STUDENT']), anonChatController_1.getAnonSession);
+// Update anonymous session status (close session)
+router.put('/:id', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['COUNSELOR', 'STUDENT']), anonChatController_1.updateAnonSession);
+// Delete anonymous session (student only)
+router.delete('/:id', authMiddleware_1.authenticateToken, (0, authMiddleware_1.requireRole)(['STUDENT']), anonChatController_1.deleteAnonSession);
 exports.default = router;

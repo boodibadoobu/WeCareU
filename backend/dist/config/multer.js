@@ -22,16 +22,16 @@ const storage = multer_1.default.diskStorage({
         cb(null, 'article-' + uniqueSuffix + path_1.default.extname(file.originalname));
     }
 });
-// File filter - only images
+// File filter - only images (JPG/PNG)
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedTypes = /jpeg|jpg|png/;
     const extname = allowedTypes.test(path_1.default.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (mimetype && extname) {
         return cb(null, true);
     }
     else {
-        cb(new Error('Only image files are allowed!'));
+        cb(new Error('Invalid file format. Please use JPG/PNG'));
     }
 };
 // Create multer instance
