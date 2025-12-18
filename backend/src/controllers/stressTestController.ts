@@ -373,8 +373,8 @@ export const getStudentResults = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error fetching student results' });
     }
 };
- 
- 
+
+
 // ADMIN: Get All Questions (for management)
 export const getAllQuestionsAdmin = async (req: Request, res: Response) => {
     try {
@@ -427,7 +427,7 @@ export const deleteQuestion = async (req: Request, res: Response) => {
     try {
         const answerCount = await prisma.stressTestAnswer.count({ where: { question_id: Number(id) } });
         if (answerCount > 0) {
-            return res.status(400).json({ message: Cannot delete question with  existing answers });
+            return res.status(400).json({ message: "Cannot delete question with existing answers" });
         }
         await prisma.stressQuestion.delete({ where: { id: Number(id) } });
         res.json({ message: 'Question deleted successfully' });
