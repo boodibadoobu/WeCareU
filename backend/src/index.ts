@@ -21,7 +21,11 @@ const port = process.env.PORT || 3000;
 // Initialize Socket.IO
 initSocket(httpServer);
 
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins for development and ngrok
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+}));
 app.use(express.json());
 app.use('/uploads', express.static('uploads')); // Serve uploaded files
 

@@ -41,7 +41,17 @@ const AnonChatPage = () => {
             console.log('Socket URL:', socketUrl);
 
             socketRef.current = io(socketUrl, {
-                auth: { token }
+                auth: { token },
+                extraHeaders: {
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                transportOptions: {
+                    polling: {
+                        extraHeaders: {
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    }
+                }
             });
 
             socketRef.current.on('connect', () => {

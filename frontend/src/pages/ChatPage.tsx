@@ -26,12 +26,31 @@ const ChatPage = () => {
 
         // Initialize Socket
         socketRef.current = io(socketUrl, {
-            auth: { token }
+            auth: { token },
+            extraHeaders: {
+                'ngrok-skip-browser-warning': 'true'
+            },
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                }
+            }
+        });
+
+        socketRef.current.on('connect', () => {
+            console.log('Socket connected successfully');
+        });
+
+        socketRef.current.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
         });
 
         socketRef.current.emit('join_session', id);
 
         socketRef.current.on('receive_message', (message: Message) => {
+            console.log('Message received:', message);
             setMessages((prev) => [...prev, message]);
         });
 
