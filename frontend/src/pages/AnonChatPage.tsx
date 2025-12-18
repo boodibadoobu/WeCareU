@@ -35,14 +35,32 @@ const AnonChatPage = () => {
     useEffect(() => {
         if (sessionId) {
             // Initialize Socket
+            console.log('Initializing socket connection for session:', sessionId);
+
             socketRef.current = io('http://localhost:3000', {
                 auth: { token }
             });
 
-            socketRef.current.emit('join_anon_session', sessionId);
+            socketRef.current.on('connect', () => {
+                console.log('Socket connected successfully');
+                socketRef.current?.emit('join_anon_session', sessionId);
+            });
+
+            socketRef.current.on('joined_anon_session', (data) => {
+                console.log('Successfully joined anon session:', data.sessionId);
+            });
 
             socketRef.current.on('receive_anon_message', (message: AnonMessage) => {
+                console.log('Received message:', message);
                 setMessages((prev) => [...prev, message]);
+            });
+
+            socketRef.current.on('error', (error) => {
+                console.error('Socket error:', error);
+            });
+
+            socketRef.current.on('connect_error', (error) => {
+                console.error('Connection error:', error);
             });
 
             return () => {

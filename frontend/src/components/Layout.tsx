@@ -10,7 +10,8 @@ import {
     Menu,
     X,
     User,
-    Activity
+    Activity,
+    BookOpen
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -35,6 +36,7 @@ const Layout = () => {
         { label: 'Anon Chats', path: '/counselor/anon-chats', icon: MessageSquare, roles: ['COUNSELOR'] },
         { label: 'Requests', path: '/counselor/requests', icon: Calendar, roles: ['COUNSELOR'] },
         { label: 'Users', path: '/admin/users', icon: User, roles: ['ADMIN'] },
+        { label: 'Questions', path: '/admin/questions', icon: BookOpen, roles: ['ADMIN'] },
     ];
 
     const filteredNavItems = navItems.filter(item => item.roles.includes(user?.role || ''));

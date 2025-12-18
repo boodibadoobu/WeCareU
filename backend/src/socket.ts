@@ -74,6 +74,16 @@ export const initSocket = (httpServer: HttpServer) => {
             const { sessionId, content, senderType } = data;
 
             try {
+                // Validate session exists
+                const session = await prisma.anonChatSession.findUnique({
+                    where: { id: sessionId }
+                });
+
+                if (!session || session.status === 'CLOSED') {
+                    socket.emit('error', { message: 'Session not found or closed' });
+                    return;
+                }
+
                 const message = await prisma.anonChatMessage.create({
                     data: {
                         anon_chat_session_id: sessionId,
@@ -82,19 +92,26 @@ export const initSocket = (httpServer: HttpServer) => {
                     }
                 });
 
+                console.log(`Anon message sent to session ${sessionId}:`, message);
+
+                // Broadcast to room
                 io.to(`anon_session_${sessionId}`).emit('receive_anon_message', message);
             } catch (error) {
                 console.error('Error sending anon message:', error);
+                socket.emit('error', { message: 'Failed to send message' });
             }
         });
 
         socket.on('join_anon_session', (sessionId: string) => {
             socket.join(`anon_session_${sessionId}`);
-            console.log(`User joined anon session ${sessionId}`);
+            console.log(`User ${socket.user?.id} joined anon session ${sessionId}`);
+
+            // Notify user they successfully joined
+            socket.emit('joined_anon_session', { sessionId });
         });
 
         socket.on('disconnect', () => {
-            console.log('User disconnected');
+            console.log(`User ${socket.user?.id} disconnected`);
         });
     });
 
