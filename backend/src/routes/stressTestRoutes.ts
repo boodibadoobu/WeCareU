@@ -1,12 +1,16 @@
 import { Router } from 'express';
-import { 
-    getQuestions, 
-    submitTest, 
-    getMyResults, 
+import {
+    getQuestions,
+    submitTest,
+    getMyResults,
     getStressTestById,
     updateStressTest,
     deleteStressTest,
-    getStudentResults 
+    getStudentResults,
+    getAllQuestionsAdmin,
+    createQuestion,
+    updateQuestion,
+    deleteQuestion
 } from '../controllers/stressTestController';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware';
 
@@ -35,5 +39,11 @@ router.delete('/my-results/:id', requireRole(['STUDENT']), deleteStressTest);
 
 // Counselor routes - Get student's stress test results
 router.get('/student/:studentId', requireRole(['COUNSELOR', 'ADMIN']), getStudentResults);
+
+// ADMIN routes - Question management
+router.get('/admin/questions', requireRole(['ADMIN']), getAllQuestionsAdmin);
+router.post('/admin/questions', requireRole(['ADMIN']), createQuestion);
+router.put('/admin/questions/:id', requireRole(['ADMIN']), updateQuestion);
+router.delete('/admin/questions/:id', requireRole(['ADMIN']), deleteQuestion);
 
 export default router;
