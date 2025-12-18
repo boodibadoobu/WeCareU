@@ -22,7 +22,7 @@ export const submitTest = async (req: Request, res: Response) => {
 
     // Validasi input
     if (!answers || !Array.isArray(answers) || answers.length === 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Answers array is required and cannot be empty']
         });
@@ -97,7 +97,7 @@ export const submitTest = async (req: Request, res: Response) => {
 // Get My Results (READ)
 export const getMyResults = async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    
+
     if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -114,7 +114,7 @@ export const getMyResults = async (req: Request, res: Response) => {
             },
             orderBy: { taken_at: 'desc' }
         });
-        
+
         res.json({
             message: 'Results fetched successfully',
             data: results,
@@ -136,7 +136,7 @@ export const getStressTestById = async (req: Request, res: Response) => {
 
     // Validasi ID
     if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid stress test ID']
         });
@@ -144,9 +144,9 @@ export const getStressTestById = async (req: Request, res: Response) => {
 
     try {
         const test = await prisma.stressTest.findFirst({
-            where: { 
+            where: {
                 id: Number(id),
-                student_id: userId 
+                student_id: userId
             },
             include: {
                 answers: {
@@ -158,7 +158,7 @@ export const getStressTestById = async (req: Request, res: Response) => {
         });
 
         if (!test) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Stress test not found or you do not have permission to view it'
             });
         }
@@ -184,7 +184,7 @@ export const updateStressTest = async (req: Request, res: Response) => {
 
     // Validasi ID
     if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid stress test ID']
         });
@@ -192,7 +192,7 @@ export const updateStressTest = async (req: Request, res: Response) => {
 
     // Validasi answers
     if (!answers || !Array.isArray(answers) || answers.length === 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Answers array is required and cannot be empty']
         });
@@ -223,14 +223,14 @@ export const updateStressTest = async (req: Request, res: Response) => {
     try {
         // Verify ownership
         const existingTest = await prisma.stressTest.findFirst({
-            where: { 
-                id: Number(id), 
-                student_id: userId 
+            where: {
+                id: Number(id),
+                student_id: userId
             }
         });
 
         if (!existingTest) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Stress test not found or you do not have permission to update it'
             });
         }
@@ -292,7 +292,7 @@ export const deleteStressTest = async (req: Request, res: Response) => {
 
     // Validasi ID
     if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid stress test ID']
         });
@@ -301,14 +301,14 @@ export const deleteStressTest = async (req: Request, res: Response) => {
     try {
         // Verify ownership
         const test = await prisma.stressTest.findFirst({
-            where: { 
-                id: Number(id), 
-                student_id: userId 
+            where: {
+                id: Number(id),
+                student_id: userId
             }
         });
 
         if (!test) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Stress test not found or you do not have permission to delete it'
             });
         }
@@ -323,7 +323,7 @@ export const deleteStressTest = async (req: Request, res: Response) => {
             where: { id: Number(id) }
         });
 
-        res.json({ 
+        res.json({
             message: 'Stress test deleted successfully',
             deletedId: Number(id)
         });
@@ -336,9 +336,9 @@ export const deleteStressTest = async (req: Request, res: Response) => {
 // Get Student Results (For Counselor)
 export const getStudentResults = async (req: Request, res: Response) => {
     const { studentId } = req.params;
-    
+
     if (!studentId || isNaN(Number(studentId))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid student ID']
         });
@@ -373,8 +373,9 @@ export const getStudentResults = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error fetching student results' });
     }
 };
- 
- 
+
+
+
 // ADMIN: Get All Questions (for management)
 export const getAllQuestionsAdmin = async (req: Request, res: Response) => {
     try {
@@ -427,7 +428,7 @@ export const deleteQuestion = async (req: Request, res: Response) => {
     try {
         const answerCount = await prisma.stressTestAnswer.count({ where: { question_id: Number(id) } });
         if (answerCount > 0) {
-            return res.status(400).json({ message: Cannot delete question with  existing answers });
+            return res.status(400).json({ message: "Cannot delete question with existing answers" });
         }
         await prisma.stressQuestion.delete({ where: { id: Number(id) } });
         res.json({ message: 'Question deleted successfully' });
