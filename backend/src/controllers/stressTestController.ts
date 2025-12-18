@@ -375,7 +375,6 @@ export const getStudentResults = async (req: Request, res: Response) => {
 };
 
 
-
 // ADMIN: Get All Questions (for management)
 export const getAllQuestionsAdmin = async (req: Request, res: Response) => {
     try {

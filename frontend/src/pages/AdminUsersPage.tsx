@@ -51,7 +51,7 @@ const AdminUsersPage = () => {
     const handleVerify = async (id: number, action: 'APPROVE' | 'REJECT') => {
         try {
             setError(null);
-            await api.post('/admin/verify-user', { userId: id, action });
+            await api.post(`/admin/verify/${id}`, { action });
             fetchUsers();
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to verify user');
