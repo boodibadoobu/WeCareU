@@ -22,6 +22,7 @@ import StudentAnonHistoryPage from './pages/StudentAnonHistoryPage';
 import StressTestHistoryPage from './pages/StressTestHistoryPage';
 import StressTestEditPage from './pages/StressTestEditPage';
 import StressTestMenuPage from './pages/StressTestMenuPage';
+import StressTestResultPage from './pages/StressTestResultPage';
 import AdminNotificationPage from './pages/AdminNotificationPage';
 import AdminQuestionsPage from './pages/AdminQuestionsPage';
 
@@ -208,6 +209,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <StressTestEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stress-test/result/:id"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StressTestResultPage />
             </ProtectedRoute>
           }
         />
