@@ -104,7 +104,7 @@ const ArticleFormPage = () => {
             }
             navigate('/articles');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to save article');
+            setError(err.response?.data?.message || 'Failed to publish article');
         } finally {
             setLoading(false);
         }
@@ -267,7 +267,7 @@ const ArticleFormPage = () => {
                             className="flex items-center bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Save className="h-5 w-5 mr-2" />
-                            {loading ? 'Saving...' : 'Save Article'}
+                            {loading ? 'Saving...' : 'Publish Article'}
                         </button>
                     </div>
                 </form>
