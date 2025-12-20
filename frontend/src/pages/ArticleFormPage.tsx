@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import api from '../api/axios';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
+import { useAuth } from '../context/AuthContext';
 
 interface ArticleFormData {
     title: string;
@@ -16,6 +17,7 @@ interface ArticleFormData {
 const ArticleFormPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const isEditMode = !!id;
 
     const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ArticleFormData>({
@@ -45,7 +47,17 @@ const ArticleFormPage = () => {
         try {
             setLoading(true);
             const res = await api.get(`/articles/${id}`);
-            const { title, category, thumbnail_url, content, is_published } = res.data;
+            const { title, category, thumbnail_url, content, is_published, author } = res.data;
+
+            // Authorization check: only article author or ADMIN can edit
+            const isAuthor = user?.id === author.id;
+            const isAdmin = user?.role === 'ADMIN';
+
+            if (!isAuthor && !isAdmin) {
+                setError('Unauthorized');
+                setTimeout(() => navigate('/articles'), 2000);
+                return;
+            }
 
             setValue('title', title);
             setValue('category', category);
