@@ -43,6 +43,11 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.get('/', (req, res) => {
     res.send('WeCareU Backend API');
 });
