@@ -21,14 +21,21 @@ interface Article {
 const ArticleListPage = () => {
     const { user } = useAuth();
     const [articles, setArticles] = useState<Article[]>([]);
+    const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [limit, setLimit] = useState(9);
 
     useEffect(() => {
         fetchArticles();
     }, [searchQuery]);
+
+    useEffect(() => {
+        // Update displayed articles when limit changes
+        setDisplayedArticles(articles.slice(0, limit));
+    }, [articles, limit]);
 
     const fetchArticles = async () => {
         try {
@@ -65,6 +72,10 @@ const ArticleListPage = () => {
 
     const canModifyArticle = (article: Article) => {
         return user?.role === 'ADMIN' || user?.id === article.author.id;
+    };
+
+    const handleLoadMore = () => {
+        setLimit(prev => prev + 9);
     };
 
     const canCreateArticle = user?.role === 'ADMIN' || user?.role === 'COUNSELOR';
@@ -118,7 +129,7 @@ const ArticleListPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {articles.map((article) => (
+                {displayedArticles.map((article) => (
                     <div key={article.id} className="group relative">
                         <Link to={`/articles/${article.id}`} className="block">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
@@ -174,7 +185,18 @@ const ArticleListPage = () => {
                 ))}
             </div>
 
-            {articles.length === 0 && (
+            {limit < articles.length && (
+                <div className="text-center mt-8">
+                    <button
+                        onClick={handleLoadMore}
+                        className="px-6 py-3 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors font-medium"
+                    >
+                        Load More ({articles.length - limit} more articles)
+                    </button>
+                </div>
+            )}
+
+            {displayedArticles.length === 0 && (
                 <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
                     <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-600">No articles found</h3>
