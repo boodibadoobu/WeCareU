@@ -10,7 +10,8 @@ import {
     getAllQuestionsAdmin,
     createQuestion,
     updateQuestion,
-    deleteQuestion
+    deleteQuestion,
+    restoreQuestion
 } from '../controllers/stressTestController';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware';
 
@@ -44,6 +45,7 @@ router.get('/student/:studentId', requireRole(['COUNSELOR', 'ADMIN']), getStuden
 router.get('/admin/questions', requireRole(['ADMIN']), getAllQuestionsAdmin);
 router.post('/admin/questions', requireRole(['ADMIN']), createQuestion);
 router.put('/admin/questions/:id', requireRole(['ADMIN']), updateQuestion);
+router.put('/admin/questions/:id/restore', requireRole(['ADMIN']), restoreQuestion);
 router.delete('/admin/questions/:id', requireRole(['ADMIN']), deleteQuestion);
 
 export default router;

@@ -30,7 +30,7 @@ const NotificationsPage = () => {
         try {
             setError(null);
             const res = await api.get('/notifications');
-            setNotifications(res.data);
+            setNotifications(res.data.data || []);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to load notifications');
         }

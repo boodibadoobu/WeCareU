@@ -74,7 +74,9 @@ const AdminUsersPage = () => {
 
         try {
             setError(null);
-            await api.put(`/admin/users/${editingUser.id}`, data);
+            // Use verify endpoint with action mapped from status
+            const action = data.status; // ACTIVE, SUSPENDED, or PENDING
+            await api.post(`/admin/verify/${editingUser.id}`, { action, reason: 'Status updated by admin' });
             setShowUserModal(false);
             setEditingUser(null);
             fetchUsers();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 import {
     LayoutDashboard,
     Calendar,
@@ -11,7 +12,8 @@ import {
     X,
     User,
     Activity,
-    BookOpen
+    BookOpen,
+    Bell
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -20,6 +22,7 @@ const Layout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+    const [unreadCount, setUnreadCount] = React.useState(0);
 
     const handleLogout = () => {
         logout();
@@ -28,6 +31,7 @@ const Layout = () => {
 
     const navItems = [
         { label: 'Dashboard', path: `/${user?.role.toLowerCase()}`, icon: LayoutDashboard, roles: ['STUDENT', 'COUNSELOR', 'ADMIN'] },
+        { label: 'Notifications', path: '/notifications', icon: Bell, roles: ['STUDENT', 'COUNSELOR', 'ADMIN'] },
         { label: 'My Sessions', path: '/sessions', icon: Calendar, roles: ['STUDENT', 'COUNSELOR'] },
         { label: 'Stress Test', path: '/stress-test', icon: Activity, roles: ['STUDENT'] },
         { label: 'Articles', path: '/articles', icon: FileText, roles: ['STUDENT', 'COUNSELOR', 'ADMIN'] },
@@ -40,6 +44,25 @@ const Layout = () => {
     ];
 
     const filteredNavItems = navItems.filter(item => item.roles.includes(user?.role || ''));
+
+    // Fetch unread notification count
+    const fetchUnreadCount = async () => {
+        try {
+            const res = await api.get('/notifications');
+            setUnreadCount(res.data.unread || 0);
+        } catch (error) {
+            // Silently fail - not critical
+        }
+    };
+
+    // Fetch on mount and poll every 30 seconds
+    React.useEffect(() => {
+        if (user) {
+            fetchUnreadCount();
+            const interval = setInterval(fetchUnreadCount, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [user]);
 
     return (
         <div className="min-h-screen bg-gray-50 flex">
@@ -66,7 +89,12 @@ const Layout = () => {
                                 )}
                             >
                                 <item.icon className="h-5 w-5 mr-3" />
-                                {item.label}
+                                <span className="flex-1">{item.label}</span>
+                                {item.label === 'Notifications' && unreadCount > 0 && (
+                                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </span>
+                                )}
                             </Link>
                         ))}
                     </nav>

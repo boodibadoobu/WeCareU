@@ -1,0 +1,933 @@
+{
+    "info": {
+        "_postman_id": "stress-test-api-collection",
+        "name": "WeCareU - Stress Test CRUD API Tests",
+        "description": "Comprehensive API testing for Stress Test CRUD operations covering all test cases (TC.Str.001 - TC.Str.004)",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "00. Authentication",
+            "item": [
+                {
+                    "name": "Login as Student",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Token is present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.token).to.exist;",
+                                    "    pm.environment.set(\"student_token\", jsonData.token);",
+                                    "    pm.environment.set(\"student_id\", jsonData.user.id);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"User role is STUDENT\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.user.role).to.eql(\"STUDENT\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identifier\": \"69696969\",\n  \"password\": \"hitam\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login to get authentication token for student"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login as Admin",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Token is present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.token).to.exist;",
+                                    "    pm.environment.set(\"admin_token\", jsonData.token);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"User role is ADMIN\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.user.role).to.eql(\"ADMIN\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identifier\": \"admin@wecareu.com\",\n  \"password\": \"admin123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login to get authentication token for admin"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Authentication endpoints untuk mendapatkan token"
+        },
+        {
+            "name": "01. CREATE - Submit Test",
+            "item": [
+                {
+                    "name": "Get Questions List",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Questions array exists\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.be.an('array');",
+                                    "    pm.expect(jsonData.length).to.be.above(0);",
+                                    "    ",
+                                    "    // Save first question ID for testing",
+                                    "    pm.environment.set(\"question_id_1\", jsonData[0].id);",
+                                    "    if (jsonData.length > 1) {",
+                                    "        pm.environment.set(\"question_id_2\", jsonData[1].id);",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/questions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "questions"
+                            ]
+                        },
+                        "description": "Get available stress test questions (public endpoint)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.001.001 - Submit Complete Test (PASS)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Success message present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('successfully');",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Test data contains required fields\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.have.property('id');",
+                                    "    pm.expect(jsonData.data).to.have.property('total_score');",
+                                    "    pm.expect(jsonData.data).to.have.property('category');",
+                                    "    ",
+                                    "    // Save test ID for later use",
+                                    "    pm.environment.set(\"stress_test_id\", jsonData.data.id);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Category is valid\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(['NORMAL', 'RINGAN', 'SEDANG', 'BERAT']).to.include(jsonData.data.category);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"answers\": [\n    {\n      \"question_id\": {{question_id_1}},\n      \"answer_value\": 2\n    },\n    {\n      \"question_id\": {{question_id_2}},\n      \"answer_value\": 1\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/submit",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "submit"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.001.001\nScenario: Student mengisikan semua soal dan submit\nExpected: Data tersimpan dengan kategori yang sesuai, tampil pesan sukses"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.001.002 - Incomplete Submission (FAIL)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 400\", function () {",
+                                    "    pm.response.to.have.status(400);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Validation error message present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('Validation');",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Errors array contains specific validation errors\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.errors).to.be.an('array');",
+                                    "    pm.expect(jsonData.errors.length).to.be.above(0);",
+                                    "    ",
+                                    "    // Check that error mentions missing answer_value",
+                                    "    var hasRequiredError = jsonData.errors.some(err => err.includes('required'));",
+                                    "    pm.expect(hasRequiredError).to.be.true;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"answers\": [\n    {\n      \"question_id\": {{question_id_1}}\n    },\n    {\n      \"question_id\": {{question_id_2}},\n      \"answer_value\": 5\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/submit",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "submit"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.001.002\nScenario: Submit dengan jawaban tidak lengkap (missing answer_value, invalid value)\nExpected: Error validation dengan pesan \"Required\" atau \"must be between 0 and 3\""
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.001.003 - Empty Submit (FAIL)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 400\", function () {",
+                                    "    pm.response.to.have.status(400);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Error about empty answers\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.errors).to.be.an('array');",
+                                    "    var hasEmptyError = jsonData.errors.some(err => err.includes('empty'));",
+                                    "    pm.expect(hasEmptyError).to.be.true;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"answers\": []\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/submit",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "submit"
+                            ]
+                        },
+                        "description": "TEST CASE: Related to TC.Str.001.002\nScenario: Submit dengan array kosong\nExpected: Error validation"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "CREATE operations - Submit stress test dengan berbagai skenario"
+        },
+        {
+            "name": "02. READ - View Results",
+            "item": [
+                {
+                    "name": "TC.Str.002.001 - View Test History (PASS)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains data array\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.be.an('array');",
+                                    "    pm.expect(jsonData.count).to.exist;",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Test results have required fields\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    if (jsonData.data.length > 0) {",
+                                    "        var first = jsonData.data[0];",
+                                    "        pm.expect(first).to.have.property('id');",
+                                    "        pm.expect(first).to.have.property('taken_at');",
+                                    "        pm.expect(first).to.have.property('total_score');",
+                                    "        pm.expect(first).to.have.property('category');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/my-results",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "my-results"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.002.001\nScenario: Student sudah submit, buka history\nExpected: Daftar riwayat tes tampil dengan tanggal, skor, kategori"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.002.002 - View Specific Result (PASS)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains detailed test data\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.exist;",
+                                    "    pm.expect(jsonData.data.answers).to.be.an('array');",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Answers include question details\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    if (jsonData.data.answers.length > 0) {",
+                                    "        var firstAnswer = jsonData.data.answers[0];",
+                                    "        pm.expect(firstAnswer).to.have.property('question');",
+                                    "        pm.expect(firstAnswer.question).to.have.property('question_text');",
+                                    "        pm.expect(firstAnswer.question).to.have.property('dimension');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/my-results/{{stress_test_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "my-results",
+                                "{{stress_test_id}}"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.002.002\nScenario: Klik detail pada satu hasil test\nExpected: Detail skor, interpretasi, kategori dengan warna sesuai"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.002.002 - Invalid ID (FAIL)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 404\", function () {",
+                                    "    pm.response.to.have.status(404);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Error message present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('not found');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/my-results/99999",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "my-results",
+                                "99999"
+                            ]
+                        },
+                        "description": "TEST CASE: Negative test for TC.Str.002.002\nScenario: Request dengan invalid ID\nExpected: 404 Not Found"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "READ operations - View test history and specific results"
+        },
+        {
+            "name": "03. UPDATE - Edit Questions",
+            "item": [
+                {
+                    "name": "TC.Str.003.001 - Edit Question Text (PASS)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Success message present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('successfully');",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Question data updated\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.have.property('question_text');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{admin_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"question_text\": \"Saya merasa sangat sulit untuk menenangkan diri (Updated)\",\n  \"dimension\": \"Stress\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/admin/questions/{{question_id_1}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "admin",
+                                "questions",
+                                "{{question_id_1}}"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.003.001\nScenario: Admin edit pertanyaan No. 13\nExpected: Teks soal terupdate di database"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.003.002 - Empty Question (FAIL)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 400\", function () {",
+                                    "    pm.response.to.have.status(400);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Validation error for question text\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('10 characters');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{admin_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"question_text\": \"Short\",\n  \"dimension\": \"Stress\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/admin/questions/{{question_id_1}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "admin",
+                                "questions",
+                                "{{question_id_1}}"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.003.002\nScenario: Field kosong atau terlalu pendek saat edit\nExpected: Error \"Question text must be at least 10 characters\""
+                    },
+                    "response": []
+                }
+            ],
+            "description": "UPDATE operations - Edit questions (Admin only)"
+        },
+        {
+            "name": "04. DELETE - Remove Questions & Results",
+            "item": [
+                {
+                    "name": "TC.Str.004.001 - Delete Question (Soft Delete)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Success message for deactivation\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('deactivated');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{admin_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/admin/questions/{{question_id_2}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "admin",
+                                "questions",
+                                "{{question_id_2}}"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.004.001\nScenario: Admin delete pertanyaan\nExpected: Soal hilang dari daftar aktif (soft delete)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.004.001 - Verify Question Deactivated",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Deactivated question not in active list\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    var questionId = parseInt(pm.environment.get(\"question_id_2\"));",
+                                    "    var found = jsonData.some(q => q.id === questionId);",
+                                    "    pm.expect(found).to.be.false;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/questions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "questions"
+                            ]
+                        },
+                        "description": "Verify that deleted question is not visible in public questions list"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.004.002 - Delete Test Result",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Success message present\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('deleted');",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Deleted ID returned\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.deletedId).to.exist;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/my-results/{{stress_test_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "my-results",
+                                "{{stress_test_id}}"
+                            ]
+                        },
+                        "description": "TEST CASE: TC.Str.004.002\nScenario: Student delete hasil test dari history\nExpected: Data hilang dari riwayat"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "TC.Str.004.002 - Verify Result Deleted",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 404\", function () {",
+                                    "    pm.response.to.have.status(404);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Not found error\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('not found');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{student_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/my-results/{{stress_test_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "my-results",
+                                "{{stress_test_id}}"
+                            ]
+                        },
+                        "description": "Verify that deleted test result cannot be retrieved"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Restore Question (Bonus)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Restore success message\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.message).to.include('restored');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{admin_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/stress-test/admin/questions/{{question_id_2}}/restore",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "stress-test",
+                                "admin",
+                                "questions",
+                                "{{question_id_2}}",
+                                "restore"
+                            ]
+                        },
+                        "description": "BONUS: Restore previously deleted question"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "DELETE operations - Remove questions and test results"
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ]
+}

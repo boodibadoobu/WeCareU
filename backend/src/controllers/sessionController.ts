@@ -1,14 +1,63 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 
+// Helper function to create notifications
+async function createNotificationHelper(
+    userId: number,
+    type: string,
+    title: string,
+    body: string
+) {
+    try {
+        await prisma.notification.create({
+            data: {
+                user_id: userId,
+                type: type as any,
+                title,
+                body,
+                is_read: false
+            }
+        });
+        console.log(`Notification created for user ${userId}: ${title}`);
+    } catch (error) {
+        console.error('Failed to create notification:', error);
+    }
+}
+
 // Create Session (Student)
 export const createSession = async (req: Request, res: Response) => {
     const studentId = req.user?.id;
     const { counselor_id, scheduled_start } = req.body;
 
+    // Debug logging
+    console.log('=== CREATE SESSION DEBUG ===');
+    console.log('Student ID:', studentId);
+    console.log('Request Body:', req.body);
+    console.log('Counselor ID:', counselor_id);
+    console.log('Scheduled Start:', scheduled_start);
+
+    // Validation checks
+    if (!studentId) {
+        console.error('ERROR: studentId is undefined - auth token might be invalid');
+        return res.status(400).json({ message: 'Student ID not found. Please login again.' });
+    }
+
+    if (!counselor_id) {
+        console.error('ERROR: counselor_id is missing');
+        return res.status(400).json({ message: 'Counselor ID is required' });
+    }
+
+    if (!scheduled_start) {
+        console.error('ERROR: scheduled_start is missing');
+        return res.status(400).json({ message: 'Scheduled start time is required' });
+    }
+
     try {
         const startTime = new Date(scheduled_start);
         const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+        console.log('Start Time:', startTime);
+        console.log('End Time:', endTime);
 
         // Check availability (simplistic: check if counselor has overlapping session)
         const conflict = await prisma.session.findFirst({
@@ -29,6 +78,7 @@ export const createSession = async (req: Request, res: Response) => {
         });
 
         if (conflict) {
+            console.log('CONFLICT FOUND:', conflict);
             return res.status(400).json({ message: 'Counselor is not available at this time' });
         }
 
@@ -42,9 +92,48 @@ export const createSession = async (req: Request, res: Response) => {
             }
         });
 
+        console.log('Session created successfully:', session);
+
+        // Get student and counselor names for notifications
+        const student = await prisma.user.findUnique({
+            where: { id: studentId },
+            select: { full_name: true }
+        });
+
+        const counselor = await prisma.user.findUnique({
+            where: { id: Number(counselor_id) },
+            select: { full_name: true }
+        });
+
+        // Format date for notification
+        const formattedDate = startTime.toLocaleString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        // Send notification to student (booking confirmation)
+        await createNotificationHelper(
+            studentId!,
+            'SESSION',
+            '✅ Session Booked Successfully',
+            `Your counseling session with ${counselor?.full_name} on ${formattedDate} is waiting for approval.`
+        );
+
+        // Send notification to counselor (new session request)
+        await createNotificationHelper(
+            Number(counselor_id),
+            'SESSION',
+            '🔔 New Session Request',
+            `${student?.full_name} requested a counseling session on ${formattedDate}`
+        );
+
         res.status(201).json(session);
     } catch (error) {
-        console.error(error);
+        console.error('ERROR creating session:', error);
         res.status(500).json({ message: 'Error creating session' });
     }
 };
@@ -91,22 +180,84 @@ export const rescheduleSession = async (req: Request, res: Response) => {
         const newStartTime = new Date(new_start);
         const newEndTime = new Date(newStartTime.getTime() + 60 * 60 * 1000);
 
-        // Check conflict again
-        // ... (omitted for brevity, assume similar logic to create)
+        // Check conflict with other sessions (excluding current session)
+        const conflict = await prisma.session.findFirst({
+            where: {
+                counselor_id: session.counselor_id,
+                status: { in: ['PENDING', 'APPROVED'] },
+                id: { not: Number(id) }, // Exclude current session
+                OR: [
+                    {
+                        scheduled_start: { lte: newStartTime },
+                        scheduled_end: { gt: newStartTime }
+                    },
+                    {
+                        scheduled_start: { lt: newEndTime },
+                        scheduled_end: { gte: newEndTime }
+                    }
+                ]
+            }
+        });
+
+        if (conflict) {
+            return res.status(400).json({
+                message: 'Counselor is not available at the new time'
+            });
+        }
 
         await prisma.session.update({
             where: { id: Number(id) },
             data: {
                 scheduled_start: newStartTime,
                 scheduled_end: newEndTime,
-                status: 'PENDING', // Needs re-approval? Usually yes.
+                status: 'PENDING', // Needs re-approval
                 reschedule_count: { increment: 1 }
             }
         });
 
-        res.json({ message: 'Session rescheduled' });
+        res.json({ message: 'Session rescheduled successfully' });
     } catch (error) {
+        console.error('Error rescheduling session:', error);
         res.status(500).json({ message: 'Error rescheduling session' });
+    }
+};
+
+// Cancel Session (Student or Counselor)
+export const cancelSession = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    try {
+        const session = await prisma.session.findUnique({ where: { id: Number(id) } });
+
+        if (!session) {
+            return res.status(404).json({ message: 'Session not found' });
+        }
+
+        // Authorization: Student or Counselor involved in this session
+        const isStudent = session.student_id === userId;
+        const isCounselor = session.counselor_id === userId;
+
+        if (!isStudent && !isCounselor) {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        // Can only cancel if session is PENDING or APPROVED
+        if (!['PENDING', 'APPROVED'].includes(session.status)) {
+            return res.status(400).json({ message: `Cannot cancel ${session.status.toLowerCase()} sessions` });
+        }
+
+        // Update status to CANCELLED
+        await prisma.session.update({
+            where: { id: Number(id) },
+            data: { status: 'CANCELLED' }
+        });
+
+        res.json({ message: 'Session cancelled successfully' });
+    } catch (error) {
+        console.error('Error cancelling session:', error);
+        res.status(500).json({ message: 'Error cancelling session' });
     }
 };
 
@@ -117,7 +268,7 @@ export const deleteSession = async (req: Request, res: Response) => {
 
     try {
         const session = await prisma.session.findUnique({ where: { id: Number(id) } });
-        
+
         if (!session || session.student_id !== studentId) {
             return res.status(404).json({ message: 'Session not found or unauthorized' });
         }
@@ -129,7 +280,7 @@ export const deleteSession = async (req: Request, res: Response) => {
 
         const now = new Date();
         const sessionStart = new Date(session.scheduled_start);
-        
+
         if (now >= sessionStart) {
             return res.status(400).json({ message: 'Cannot delete session that has already started' });
         }

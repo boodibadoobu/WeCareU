@@ -38,7 +38,7 @@ const StressTestEditPage = () => {
             setQuestions(questionsRes.data);
 
             // Fetch existing test answers
-            const testRes = await api.get(`/stress-test/${id}`);
+            const testRes = await api.get(`/stress-test/my-results/${id}`);
             const existingAnswers: { [key: number]: number } = {};
 
             testRes.data.answers.forEach((answer: Answer) => {
@@ -74,7 +74,7 @@ const StressTestEditPage = () => {
                 answer_value: val
             }));
 
-            await api.put(`/stress-test/${id}`, { answers: payload });
+            await api.put(`/stress-test/my-results/${id}`, { answers: payload });
             navigate('/stress-test/history');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to update test');

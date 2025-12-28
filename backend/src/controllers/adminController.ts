@@ -43,28 +43,33 @@ export const getAllUsers = async (req: Request, res: Response) => {
     }
 };
 
-// Verify User (Approve/Reject)
+// Verify User (Approve/Reject) - Also allows status updates for existing users
 export const verifyUser = async (req: Request, res: Response) => {
     const { userId } = req.params;
-    const { action, reason } = req.body; // action: 'APPROVE' | 'REJECT'
+    const { action, reason } = req.body; // action: 'APPROVE' | 'REJECT' | 'ACTIVE' | 'SUSPENDED'
     const adminId = req.user?.id;
 
     try {
         const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        if (action === 'APPROVE') {
-            await prisma.user.update({
-                where: { id: Number(userId) },
-                data: { status: 'ACTIVE' }
-            });
-        } else if (action === 'REJECT') {
-            // Optionally delete or mark as suspended
-            await prisma.user.update({
-                where: { id: Number(userId) },
-                data: { status: 'SUSPENDED' }
-            });
+        let newStatus: 'ACTIVE' | 'SUSPENDED' | 'PENDING';
+
+        // Map actions to statuses
+        if (action === 'APPROVE' || action === 'ACTIVE') {
+            newStatus = 'ACTIVE';
+        } else if (action === 'REJECT' || action === 'SUSPENDED') {
+            newStatus = 'SUSPENDED';
+        } else if (action === 'PENDING') {
+            newStatus = 'PENDING';
+        } else {
+            return res.status(400).json({ message: 'Invalid action' });
         }
+
+        await prisma.user.update({
+            where: { id: Number(userId) },
+            data: { status: newStatus }
+        });
 
         // Audit Log
         await prisma.verificationAudit.create({
@@ -76,7 +81,7 @@ export const verifyUser = async (req: Request, res: Response) => {
             }
         });
 
-        res.json({ message: `User ${action}D successfully` });
+        res.json({ message: `User status updated to ${newStatus} successfully` });
     } catch (error) {
         res.status(500).json({ message: 'Error verifying user' });
     }
@@ -307,3 +312,111 @@ export const deleteUser = async (req: Request, res: Response) => {
     }
 };
 
+// Send Notification to Multiple Users
+export const sendNotification = async (req: Request, res: Response) => {
+    const { type, title, body, target_type, target_role, target_user_id } = req.body;
+
+    // Validation
+    const validationErrors = [];
+
+    if (!type || !['SESSION', 'STRESS_RESULT', 'SYSTEM'].includes(type)) {
+        validationErrors.push('type must be one of: SESSION, STRESS_RESULT, SYSTEM');
+    }
+
+    if (!title || title.trim().length < 3) {
+        validationErrors.push('title must be at least 3 characters long');
+    }
+
+    if (!body || body.trim().length < 10) {
+        validationErrors.push('body must be at least 10 characters long');
+    }
+
+    if (!target_type || !['ALL', 'ROLE', 'USER'].includes(target_type)) {
+        validationErrors.push('target_type must be one of: ALL, ROLE, USER');
+    }
+
+    if (target_type === 'ROLE' && (!target_role || !['STUDENT', 'COUNSELOR', 'ADMIN'].includes(target_role))) {
+        validationErrors.push('target_role must be one of: STUDENT, COUNSELOR, ADMIN');
+    }
+
+    if (target_type === 'USER' && (!target_user_id || isNaN(Number(target_user_id)))) {
+        validationErrors.push('target_user_id must be a valid number');
+    }
+
+    if (validationErrors.length > 0) {
+        return res.status(400).json({
+            message: 'Validation failed',
+            errors: validationErrors
+        });
+    }
+
+    try {
+        let targetUsers: { id: number }[] = [];
+
+        // Determine target users based on target_type
+        if (target_type === 'ALL') {
+            targetUsers = await prisma.user.findMany({
+                where: { status: 'ACTIVE' },
+                select: { id: true }
+            });
+        } else if (target_type === 'ROLE') {
+            targetUsers = await prisma.user.findMany({
+                where: {
+                    role: target_role,
+                    status: 'ACTIVE'
+                },
+                select: { id: true }
+            });
+        } else if (target_type === 'USER') {
+            const user = await prisma.user.findUnique({
+                where: { id: Number(target_user_id) },
+                select: { id: true, status: true }
+            });
+
+            if (!user) {
+                return res.status(404).json({
+                    message: 'User not found'
+                });
+            }
+
+            if (user.status !== 'ACTIVE') {
+                return res.status(400).json({
+                    message: 'Cannot send notification to inactive user'
+                });
+            }
+
+            targetUsers = [{ id: user.id }];
+        }
+
+        // Check if there are any target users
+        if (targetUsers.length === 0) {
+            return res.status(404).json({
+                message: 'No active users found for the specified criteria'
+            });
+        }
+
+        // Create notifications for all target users
+        const notifications = await prisma.notification.createMany({
+            data: targetUsers.map(user => ({
+                user_id: user.id,
+                type,
+                title: title.trim(),
+                body: body.trim(),
+                is_read: false
+            }))
+        });
+
+        res.status(201).json({
+            message: 'Notifications sent successfully',
+            totalSent: notifications.count,
+            targetType: target_type,
+            ...(target_type === 'ROLE' && { targetRole: target_role })
+        });
+    } catch (error) {
+        console.error('Error sending notifications:', error);
+        res.status(500).json({
+            message: 'Error sending notifications',
+            error: String(error)
+        });
+    }
+};

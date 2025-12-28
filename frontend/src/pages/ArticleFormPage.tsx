@@ -93,8 +93,8 @@ const ArticleFormPage = () => {
                 }
             });
 
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-            const imageUrl = `${apiUrl}${res.data.url}`;
+            // Backend already returns full URL, use it directly
+            const imageUrl = res.data.url;
             setValue('thumbnail_url', imageUrl);
             setSelectedFile(null);
         } catch (err: any) {
@@ -197,19 +197,10 @@ const ArticleFormPage = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail URL</label>
                             <input
                                 type="text"
-                                {...register('thumbnail_url', {
-                                    pattern: {
-                                        value: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
-                                        message: 'Invalid URL format'
-                                    }
-                                })}
-                                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.thumbnail_url ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                {...register('thumbnail_url')}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                                 placeholder="https://example.com/image.jpg"
                             />
-                            {errors.thumbnail_url && (
-                                <p className="text-xs text-red-500 mt-1">{errors.thumbnail_url.message}</p>
-                            )}
                         </div>
                     </div>
 

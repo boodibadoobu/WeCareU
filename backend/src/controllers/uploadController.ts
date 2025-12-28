@@ -6,8 +6,10 @@ export const uploadImage = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        // Return the file URL
-        const fileUrl = `/uploads/${req.file.filename}`;
+        // Build full URL from environment or request
+        const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+        const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+
         res.json({
             message: 'File uploaded successfully',
             url: fileUrl,

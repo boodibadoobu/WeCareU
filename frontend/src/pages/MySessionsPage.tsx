@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MessageCircle, X } from 'lucide-react';
+import { Calendar, MessageCircle, X, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
@@ -9,7 +9,9 @@ import ErrorAlert from '../components/ErrorAlert';
 interface Session {
     id: number;
     scheduled_start: string;
+    scheduled_end: string;
     status: string;
+    reschedule_count: number;
     counselor?: { full_name: string };
     student?: { full_name: string };
 }
@@ -20,6 +22,12 @@ const MySessionsPage = () => {
     const [cancelId, setCancelId] = useState<number | null>(null);
     const [cancelling, setCancelling] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Reschedule state
+    const [rescheduleSession, setRescheduleSession] = useState<Session | null>(null);
+    const [newDate, setNewDate] = useState('');
+    const [newTime, setNewTime] = useState('');
+    const [rescheduling, setRescheduling] = useState(false);
 
     useEffect(() => {
         fetchSessions();
@@ -76,6 +84,53 @@ const MySessionsPage = () => {
         return session.status === 'PENDING' || session.status === 'APPROVED';
     };
 
+    const canReschedule = (session: Session) => {
+        // Only PENDING sessions can be rescheduled
+        if (session.status !== 'PENDING') return false;
+
+        // Already rescheduled once
+        if (session.reschedule_count >= 1) return false;
+
+        // Check if more than 24h before session
+        const sessionStart = new Date(session.scheduled_start);
+        const now = new Date();
+        const hoursUntilSession = (sessionStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+        return hoursUntilSession >= 24;
+    };
+
+    const handleRescheduleClick = (session: Session) => {
+        setRescheduleSession(session);
+        // Pre-fill with current date/time
+        const current = new Date(session.scheduled_start);
+        setNewDate(current.toISOString().split('T')[0]);
+        setNewTime(current.toTimeString().slice(0, 5));
+    };
+
+    const handleRescheduleConfirm = async () => {
+        if (!rescheduleSession || !newDate || !newTime) return;
+
+        try {
+            setRescheduling(true);
+            setError(null);
+
+            const newStart = new Date(`${newDate}T${newTime}`);
+            await api.put(`/sessions/${rescheduleSession.id}/reschedule`, {
+                new_start: newStart.toISOString()
+            });
+
+            // Success - close modal and refresh
+            setRescheduleSession(null);
+            setNewDate('');
+            setNewTime('');
+            fetchSessions();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to reschedule session');
+        } finally {
+            setRescheduling(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <ErrorAlert
@@ -126,6 +181,17 @@ const MySessionsPage = () => {
                                     </Link>
                                 )}
 
+                                {user?.role === 'STUDENT' && canReschedule(session) && (
+                                    <button
+                                        onClick={() => handleRescheduleClick(session)}
+                                        className="flex items-center px-4 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors"
+                                        title="Reschedule Session"
+                                    >
+                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                        Reschedule
+                                    </button>
+                                )}
+
                                 {canCancelSession(session) && (
                                     <button
                                         onClick={(e) => handleCancelClick(session.id, e)}
@@ -152,6 +218,72 @@ const MySessionsPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Reschedule Modal */}
+            {rescheduleSession && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                        <h3 className="text-xl font-bold mb-4">Reschedule Session</h3>
+
+                        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-600">Current session:</p>
+                            <p className="font-medium">
+                                {new Date(rescheduleSession.scheduled_start).toLocaleString()}
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={newDate}
+                                    onChange={(e) => setNewDate(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                    min={new Date().toISOString().split('T')[0]}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">New Time</label>
+                                <input
+                                    type="time"
+                                    required
+                                    value={newTime}
+                                    onChange={(e) => setNewTime(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                />
+                            </div>
+
+                            <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+                                ℹ️ You can only reschedule once per session, at least 24h before the original time.
+                            </div>
+                        </div>
+
+                        <div className="flex space-x-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setRescheduleSession(null);
+                                    setNewDate('');
+                                    setNewTime('');
+                                }}
+                                className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                disabled={rescheduling}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleRescheduleConfirm}
+                                disabled={rescheduling || !newDate || !newTime}
+                                className="flex-1 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                            >
+                                {rescheduling ? 'Rescheduling...' : 'Confirm Reschedule'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

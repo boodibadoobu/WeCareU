@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { Edit, Trash2, Plus, BookOpen } from 'lucide-react';
+import { Edit, Trash2, Plus, BookOpen, RefreshCw } from 'lucide-react';
 import QuestionFormModal from '../components/QuestionFormModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
@@ -9,6 +9,7 @@ interface Question {
     id: number;
     question_text: string;
     dimension: string;
+    is_active: boolean;
 }
 
 const AdminQuestionsPage = () => {
@@ -20,6 +21,7 @@ const AdminQuestionsPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [restoring, setRestoring] = useState(false);
 
     useEffect(() => {
         fetchQuestions();
@@ -74,15 +76,30 @@ const AdminQuestionsPage = () => {
             setDeleting(true);
             setError(null);
             await api.delete(`/stress-test/admin/questions/${deleteId}`);
-            setSuccess('Question deleted successfully!');
-            setQuestions(questions.filter(q => q.id !== deleteId));
+            setSuccess('Question deactivated successfully!');
+            fetchQuestions(); // Refetch to update is_active status
             setDeleteId(null);
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete question');
+            setError(err.response?.data?.message || 'Failed to deactivate question');
             setDeleteId(null);
         } finally {
             setDeleting(false);
+        }
+    };
+
+    const handleRestore = async (id: number) => {
+        try {
+            setRestoring(true);
+            setError(null);
+            await api.put(`/stress-test/admin/questions/${id}/restore`);
+            setSuccess('Question restored successfully!');
+            fetchQuestions();
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to restore question');
+        } finally {
+            setRestoring(false);
         }
     };
 
@@ -159,12 +176,13 @@ const AdminQuestionsPage = () => {
                                     <th className="px-6 py-4 font-medium">ID</th>
                                     <th className="px-6 py-4 font-medium">Question Text</th>
                                     <th className="px-6 py-4 font-medium">Dimension</th>
+                                    <th className="px-6 py-4 font-medium">Status</th>
                                     <th className="px-6 py-4 font-medium text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {questions.map((question) => (
-                                    <tr key={question.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={question.id} className={`hover:bg-gray-50 transition-colors ${!question.is_active ? 'opacity-50 bg-gray-50' : ''}`}>
                                         <td className="px-6 py-4 text-gray-600">#{question.id}</td>
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-gray-900 max-w-2xl">
@@ -176,8 +194,29 @@ const AdminQuestionsPage = () => {
                                                 {question.dimension || 'general'}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4">
+                                            {question.is_active ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Active
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    Inactive
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
+                                                {!question.is_active && (
+                                                    <button
+                                                        onClick={() => handleRestore(question.id)}
+                                                        disabled={restoring}
+                                                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 disabled:opacity-50"
+                                                        title="Restore"
+                                                    >
+                                                        <RefreshCw className="h-5 w-5" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => openEditModal(question)}
                                                     className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
@@ -185,14 +224,16 @@ const AdminQuestionsPage = () => {
                                                 >
                                                     <Edit className="h-5 w-5" />
                                                 </button>
-                                                <button
-                                                    onClick={() => setDeleteId(question.id)}
-                                                    disabled={deleting}
-                                                    className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 disabled:opacity-50"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-5 w-5" />
-                                                </button>
+                                                {question.is_active && (
+                                                    <button
+                                                        onClick={() => setDeleteId(question.id)}
+                                                        disabled={deleting}
+                                                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 disabled:opacity-50"
+                                                        title="Deactivate"
+                                                    >
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

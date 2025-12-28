@@ -1,10 +1,18 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 
-// Get Questions
+// Get Questions (Public - for students taking test)
 export const getQuestions = async (req: Request, res: Response) => {
     try {
-        const questions = await prisma.stressQuestion.findMany();
+        // Only return active questions
+        const questions = await prisma.stressQuestion.findMany({
+            where: { is_active: true },
+            select: {
+                id: true,
+                question_text: true,
+                dimension: true
+            }
+        });
         res.json(questions);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching questions' });
@@ -375,10 +383,16 @@ export const getStudentResults = async (req: Request, res: Response) => {
 };
 
 
-// ADMIN: Get All Questions (for management)
+// ADMIN: Get All Questions (for management) - includes inactive
 export const getAllQuestionsAdmin = async (req: Request, res: Response) => {
     try {
         const questions = await prisma.stressQuestion.findMany({
+            select: {
+                id: true,
+                question_text: true,
+                dimension: true,
+                is_active: true // Include active status
+            },
             orderBy: { id: 'asc' }
         });
         res.json({ message: 'Questions fetched successfully', data: questions });
@@ -421,17 +435,33 @@ export const updateQuestion = async (req: Request, res: Response) => {
     }
 };
 
-// ADMIN: Delete Question
+// ADMIN: Delete Question (Soft Delete)
 export const deleteQuestion = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const answerCount = await prisma.stressTestAnswer.count({ where: { question_id: Number(id) } });
-        if (answerCount > 0) {
-            return res.status(400).json({ message: "Cannot delete question with existing answers" });
-        }
-        await prisma.stressQuestion.delete({ where: { id: Number(id) } });
-        res.json({ message: 'Question deleted successfully' });
+        // Soft delete: set is_active to false instead of deleting
+        await prisma.stressQuestion.update({
+            where: { id: Number(id) },
+            data: { is_active: false }
+        });
+        res.json({ message: 'Question deactivated successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting question' });
+        console.error('Error deactivating question:', error);
+        res.status(500).json({ message: 'Error deactivating question' });
+    }
+};
+
+// ADMIN: Restore Question (Reactivate)
+export const restoreQuestion = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await prisma.stressQuestion.update({
+            where: { id: Number(id) },
+            data: { is_active: true }
+        });
+        res.json({ message: 'Question restored successfully' });
+    } catch (error) {
+        console.error('Error restoring question:', error);
+        res.status(500).json({ message: 'Error restoring question' });
     }
 };
