@@ -19,9 +19,11 @@ interface Session {
 const MySessionsPage = () => {
     const { user } = useAuth();
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [displayedSessions, setDisplayedSessions] = useState<Session[]>([]);
     const [cancelId, setCancelId] = useState<number | null>(null);
     const [cancelling, setCancelling] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [limit, setLimit] = useState(7);
 
     // Reschedule state
     const [rescheduleSession, setRescheduleSession] = useState<Session | null>(null);
@@ -32,6 +34,11 @@ const MySessionsPage = () => {
     useEffect(() => {
         fetchSessions();
     }, []);
+
+    useEffect(() => {
+        // Update displayed sessions when limit changes
+        setDisplayedSessions(sessions.slice(0, limit));
+    }, [sessions, limit]);
 
     const fetchSessions = async () => {
         try {
@@ -131,6 +138,10 @@ const MySessionsPage = () => {
         }
     };
 
+    const handleLoadMore = () => {
+        setLimit(prev => prev + 7);
+    };
+
     return (
         <div className="space-y-6">
             <ErrorAlert
@@ -152,7 +163,7 @@ const MySessionsPage = () => {
             <h2 className="text-2xl font-bold text-gray-800">My Sessions</h2>
 
             <div className="grid gap-4">
-                {sessions.map((session) => (
+                {displayedSessions.map((session) => (
                     <div key={session.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group">
                         <div className="flex justify-between items-start">
                             <div className="flex-1">
@@ -208,7 +219,18 @@ const MySessionsPage = () => {
                     </div>
                 ))}
 
-                {sessions.length === 0 && (
+                {limit < sessions.length && (
+                    <div className="text-center py-4">
+                        <button
+                            onClick={handleLoadMore}
+                            className="px-6 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors font-medium"
+                        >
+                            Load More ({sessions.length - limit} more)
+                        </button>
+                    </div>
+                )}
+
+                {displayedSessions.length === 0 && (
                     <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">
                         <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-600">No sessions found</h3>

@@ -18,13 +18,20 @@ interface Notification {
 const NotificationsPage = () => {
     const { user } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [displayedNotifications, setDisplayedNotifications] = useState<Notification[]>([]);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [limit, setLimit] = useState(7);
 
     useEffect(() => {
         fetchNotifications();
     }, []);
+
+    useEffect(() => {
+        // Update displayed notifications when limit changes
+        setDisplayedNotifications(notifications.slice(0, limit));
+    }, [notifications, limit]);
 
     const fetchNotifications = async () => {
         try {
@@ -71,6 +78,10 @@ const NotificationsPage = () => {
         } finally {
             setDeleting(false);
         }
+    };
+
+    const handleLoadMore = () => {
+        setLimit(prev => prev + 7);
     };
 
     const getTypeColor = (type: string) => {
@@ -128,55 +139,67 @@ const NotificationsPage = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-                {notifications.length === 0 ? (
+                {displayedNotifications.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         No notifications yet.
                     </div>
                 ) : (
-                    notifications.map((notification) => (
-                        <div
-                            key={notification.id}
-                            className={`p-4 flex items-start justify-between transition-colors group ${notification.is_read ? 'bg-white' : 'bg-green-50'
-                                }`}
-                        >
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(notification.type)}`}>
-                                        {notification.type}
-                                    </span>
-                                    {!notification.is_read && (
-                                        <span className="h-2 w-2 bg-green-600 rounded-full"></span>
-                                    )}
+                    <>
+                        {displayedNotifications.map((notification) => (
+                            <div
+                                key={notification.id}
+                                className={`p-4 flex items-start justify-between transition-colors group ${notification.is_read ? 'bg-white' : 'bg-green-50'
+                                    }`}
+                            >
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(notification.type)}`}>
+                                            {notification.type}
+                                        </span>
+                                        {!notification.is_read && (
+                                            <span className="h-2 w-2 bg-green-600 rounded-full"></span>
+                                        )}
+                                    </div>
+                                    <h3 className={`font-semibold text-gray-800 mb-1 ${!notification.is_read && 'font-bold'}`}>
+                                        {notification.title}
+                                    </h3>
+                                    <p className="text-gray-600 text-sm mb-2">{notification.body}</p>
+                                    <p className="text-xs text-gray-500">
+                                        {new Date(notification.created_at).toLocaleString()}
+                                    </p>
                                 </div>
-                                <h3 className={`font-semibold text-gray-800 mb-1 ${!notification.is_read && 'font-bold'}`}>
-                                    {notification.title}
-                                </h3>
-                                <p className="text-gray-600 text-sm mb-2">{notification.body}</p>
-                                <p className="text-xs text-gray-500">
-                                    {new Date(notification.created_at).toLocaleString()}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2 ml-4">
-                                {!notification.is_read && (
+                                <div className="flex items-center gap-2 ml-4">
+                                    {!notification.is_read && (
+                                        <button
+                                            onClick={() => handleMarkAsRead(notification.id)}
+                                            className="text-gray-400 hover:text-green-600 p-1 transition-colors"
+                                            title="Mark as read"
+                                        >
+                                            <Check className="h-4 w-4" />
+                                        </button>
+                                    )}
                                     <button
-                                        onClick={() => handleMarkAsRead(notification.id)}
-                                        className="text-gray-400 hover:text-green-600 p-1 transition-colors"
-                                        title="Mark as read"
+                                        onClick={() => setDeleteId(notification.id)}
+                                        disabled={deleting}
+                                        className="text-gray-400 hover:text-red-600 p-1 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+                                        title="Delete"
                                     >
-                                        <Check className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" />
                                     </button>
-                                )}
+                                </div>
+                            </div>
+                        ))}
+                        {limit < notifications.length && (
+                            <div className="p-4 text-center">
                                 <button
-                                    onClick={() => setDeleteId(notification.id)}
-                                    disabled={deleting}
-                                    className="text-gray-400 hover:text-red-600 p-1 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
-                                    title="Delete"
+                                    onClick={handleLoadMore}
+                                    className="px-6 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors font-medium"
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    Load More ({notifications.length - limit} more)
                                 </button>
                             </div>
-                        </div>
-                    ))
+                        )}
+                    </>
                 )}
             </div>
         </div>

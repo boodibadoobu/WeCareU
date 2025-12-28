@@ -14,16 +14,23 @@ interface StressTestResult {
 
 const StressTestHistoryPage = () => {
     const [results, setResults] = useState<StressTestResult[]>([]);
+    const [displayedResults, setDisplayedResults] = useState<StressTestResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [limit, setLimit] = useState(7);
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchHistory();
     }, []);
+
+    useEffect(() => {
+        // Update displayed results when limit changes
+        setDisplayedResults(results.slice(0, limit));
+    }, [results, limit]);
 
     const fetchHistory = async () => {
         try {
@@ -85,6 +92,10 @@ const StressTestHistoryPage = () => {
         }
     };
 
+    const handleLoadMore = () => {
+        setLimit(prev => prev + 7);
+    };
+
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto mt-8 mb-12">
@@ -134,7 +145,7 @@ const StressTestHistoryPage = () => {
                 </button>
             </div>
 
-            {results.length === 0 ? (
+            {displayedResults.length === 0 ? (
                 <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">
                     <ClipboardList className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-600">No test results yet</h3>
@@ -147,59 +158,72 @@ const StressTestHistoryPage = () => {
                     </button>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {results.map((result) => (
-                        <div key={result.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center flex-1">
-                                    <div className="text-4xl mr-4">
-                                        {getCategoryIcon(result.category)}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getCategoryColor(result.category)}`}>
-                                                {result.category}
-                                            </span>
-                                            <span className="text-gray-600">Score: <span className="font-bold">{result.total_score}</span></span>
+                <>
+                    <div className="space-y-4">
+                        {displayedResults.map((result) => (
+                            <div key={result.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center flex-1">
+                                        <div className="text-4xl mr-4">
+                                            {getCategoryIcon(result.category)}
                                         </div>
-                                        <div className="flex items-center text-sm text-gray-500">
-                                            <Calendar className="h-4 w-4 mr-2" />
-                                            {new Date(result.taken_at).toLocaleString()}
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getCategoryColor(result.category)}`}>
+                                                    {result.category}
+                                                </span>
+                                                <span className="text-gray-600">Score: <span className="font-bold">{result.total_score}</span></span>
+                                            </div>
+                                            <div className="flex items-center text-sm text-gray-500">
+                                                <Calendar className="h-4 w-4 mr-2" />
+                                                {new Date(result.taken_at).toLocaleString()}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="flex gap-2">
-                                    {canEdit(result.taken_at) && (
+                                    <div className="flex gap-2">
+                                        {canEdit(result.taken_at) && (
+                                            <button
+                                                onClick={() => navigate(`/stress-test/edit/${result.id}`)}
+                                                className="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                                title="Edit (available for 24 hours)"
+                                            >
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                Edit
+                                            </button>
+                                        )}
                                         <button
-                                            onClick={() => navigate(`/stress-test/edit/${result.id}`)}
-                                            className="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                                            title="Edit (available for 24 hours)"
+                                            onClick={() => navigate(`/stress-test/result/${result.id}`)}
+                                            className="flex items-center px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                                         >
-                                            <Edit className="h-4 w-4 mr-2" />
-                                            Edit
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            View Details
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => navigate(`/stress-test/result/${result.id}`)}
-                                        className="flex items-center px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                                    >
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        View Details
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteId(result.id)}
-                                        className="flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                                        title="Delete this test"
-                                    >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Delete
-                                    </button>
+                                        <button
+                                            onClick={() => setDeleteId(result.id)}
+                                            className="flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                            title="Delete this test"
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                        ))}
+                    </div>
+
+                    {limit < results.length && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={handleLoadMore}
+                                className="px-6 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors font-medium"
+                            >
+                                Load More ({results.length - limit} more)
+                            </button>
                         </div>
-                    ))}
-                </div>
+                    )}
+                </>
             )}
 
             {/* Delete Confirmation Dialog */}
