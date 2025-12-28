@@ -69,7 +69,7 @@ const CounselorDashboard = () => {
             {/* Welcome Section */}
             <div className="bg-gradient-to-r from-green-50 to-blue-50 p-8 rounded-xl border border-green-100">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                    Hello, {user?.full_name || 'Counselor'}! 👋
+                    Hello, {user?.name || 'Counselor'}! 👋
                 </h1>
                 <p className="text-gray-600">
                     Welcome to your dashboard. Here's a summary of your counseling activities and student support impact.
