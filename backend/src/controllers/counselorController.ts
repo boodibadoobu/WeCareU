@@ -106,6 +106,58 @@ export const rejectSession = async (req: Request, res: Response) => {
     }
 };
 
+// Get Counselor Stats for Dashboard
+export const getCounselorStats = async (req: Request, res: Response) => {
+    const counselorId = req.user?.id;
+    try {
+        // Count unique students helped (have at least one completed session)
+        const uniqueStudents = await prisma.session.findMany({
+            where: {
+                counselor_id: counselorId,
+                status: 'COMPLETED'
+            },
+            select: {
+                student_id: true
+            },
+            distinct: ['student_id']
+        });
+
+        // Count pending requests
+        const pendingCount = await prisma.session.count({
+            where: {
+                counselor_id: counselorId,
+                status: 'PENDING'
+            }
+        });
+
+        // Count approved sessions
+        const approvedCount = await prisma.session.count({
+            where: {
+                counselor_id: counselorId,
+                status: 'APPROVED'
+            }
+        });
+
+        // Count completed sessions
+        const completedCount = await prisma.session.count({
+            where: {
+                counselor_id: counselorId,
+                status: 'COMPLETED'
+            }
+        });
+
+        res.json({
+            totalStudentsHelped: uniqueStudents.length,
+            pendingRequests: pendingCount,
+            approvedSessions: approvedCount,
+            completedSessions: completedCount
+        });
+    } catch (error) {
+        console.error('Error fetching counselor stats:', error);
+        res.status(500).json({ message: 'Error fetching stats' });
+    }
+};
+
 // Get My Activity (History)
 export const getCounselorActivity = async (req: Request, res: Response) => {
     const counselorId = req.user?.id;
