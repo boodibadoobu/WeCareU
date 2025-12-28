@@ -146,11 +146,19 @@ export const getCounselorStats = async (req: Request, res: Response) => {
             }
         });
 
+        // Count articles created by counselor
+        const articlesCount = await prisma.article.count({
+            where: {
+                author_id: counselorId
+            }
+        });
+
         res.json({
             totalStudentsHelped: uniqueStudents.length,
             pendingRequests: pendingCount,
             approvedSessions: approvedCount,
-            completedSessions: completedCount
+            completedSessions: completedCount,
+            articlesCreated: articlesCount
         });
     } catch (error) {
         console.error('Error fetching counselor stats:', error);
