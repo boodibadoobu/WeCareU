@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { Users, UserCheck, Calendar, CheckCircle, Activity } from 'lucide-react';
+import { Users, UserCheck, Calendar, Activity } from 'lucide-react';
 
 interface DashboardStats {
     totalStudents: number;

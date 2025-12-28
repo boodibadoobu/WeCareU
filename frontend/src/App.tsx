@@ -13,7 +13,6 @@ import StressTestPage from './pages/StressTestPage';
 import ArticleListPage from './pages/ArticleListPage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
 import ArticleFormPage from './pages/ArticleFormPage';
-import CounselorStudentResultsPage from './pages/CounselorStudentResultsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import NotificationsPage from './pages/NotificationsPage';
 import AdminUsersPage from './pages/AdminUsersPage';

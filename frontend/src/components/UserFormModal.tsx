@@ -171,7 +171,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isEdit = false 
                                 <input
                                     type="email"
                                     {...register('email', {
-                                        required: selectedRole !== 'STUDENT' ? 'Email is required' : false,
+                                        required: (selectedRole === 'ADMIN' || selectedRole === 'COUNSELOR') ? 'Email is required' : false,
                                         pattern: {
                                             value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                                             message: 'Invalid email address'
