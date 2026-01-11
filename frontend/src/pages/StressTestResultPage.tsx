@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { ArrowLeft, Calendar, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface Answer {
     id: number;
@@ -136,10 +137,54 @@ const StressTestResultPage = () => {
     };
 
     if (loading) {
+
         return (
             <div className="max-w-4xl mx-auto mt-8 mb-12 px-4">
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                    <p className="text-gray-500">Loading test details...</p>
+                {/* Back Button Skeleton */}
+                <Skeleton width={120} height={20} className="mb-6" />
+
+                {/* Header Card Skeleton */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                            <Skeleton className="h-14 w-14 mr-4 bg-green-100" />
+                            <div>
+                                <Skeleton width={200} height={32} className="mb-2" />
+                                <Skeleton width={150} height={20} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <Skeleton height={100} className="rounded-lg" />
+                        <Skeleton height={100} className="rounded-lg" />
+                    </div>
+                </div>
+
+                {/* Interpretation Card Skeleton */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <div className="flex items-center mb-4">
+                        <Skeleton width={24} height={24} className="mr-3 rounded-full" />
+                        <Skeleton width={200} height={28} />
+                    </div>
+                    <Skeleton width="100%" height={16} className="mb-2" />
+                    <Skeleton width="90%" height={16} className="mb-4" />
+
+                    <div className="space-y-2">
+                        {[1, 2, 3].map(i => (
+                            <Skeleton key={i} width="80%" height={16} />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Detailed Answers Skeleton */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <Skeleton width={150} height={28} className="mb-4" />
+                    <div className="space-y-3">
+                        {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} height={80} className="rounded-lg" />
+                        ))}
+                    </div>
                 </div>
             </div>
         );

@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ClipboardList, Save, ArrowLeft } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface Question {
     id: number;
@@ -86,8 +87,37 @@ const StressTestEditPage = () => {
     if (loading) {
         return (
             <div className="max-w-3xl mx-auto mt-8 mb-12">
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                    <p className="text-gray-500">Loading test data...</p>
+                <Skeleton width={120} height={20} className="mb-6" />
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex items-center mb-8">
+                        <Skeleton width={48} height={48} className="mr-4 rounded-lg" />
+                        <div className="flex-1">
+                            <Skeleton width={250} height={32} className="mb-2" />
+                            <Skeleton width="80%" height={20} />
+                        </div>
+                    </div>
+
+                    {/* Progress Bar Skeleton */}
+                    <div className="mb-8">
+                        <div className="flex justify-between items-center mb-2">
+                            <Skeleton width={60} height={20} />
+                            <Skeleton width={40} height={20} />
+                        </div>
+                        <Skeleton width="100%" height={8} className="rounded-full" />
+                    </div>
+
+                    <div className="space-y-8">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="border-b border-gray-100 pb-6 last:border-0">
+                                <Skeleton width="70%" height={24} className="mb-4" />
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {[1, 2, 3, 4].map(j => (
+                                        <Skeleton key={j} height={48} className="rounded-lg" />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         );

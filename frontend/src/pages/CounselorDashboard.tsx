@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { Check, X, Calendar, Users, Clock, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Skeleton from '../components/Skeleton';
 
 interface SessionRequest {
     id: number;
     student: {
         full_name: string;
         nim: string;
+        stress_tests: {
+            total_score: number;
+            category: string;
+            taken_at: string;
+        }[];
     };
     scheduled_start: string;
     status: string;
@@ -77,56 +83,81 @@ const CounselorDashboard = () => {
             </div>
 
             {/* Stats Section */}
-            {stats && (
-                <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Your Impact Summary</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <StatCard
-                            title="Students Helped"
-                            value={stats.totalStudentsHelped}
-                            icon={<Users className="h-6 w-6 text-blue-600" />}
-                            color="bg-blue-50"
-                            description="Unique students"
-                        />
-                        <StatCard
-                            title="Articles Created"
-                            value={stats.articlesCreated}
-                            icon={<BookOpen className="h-6 w-6 text-purple-600" />}
-                            color="bg-purple-50"
-                            description="Published articles"
-                        />
-                        <StatCard
-                            title="Pending Requests"
-                            value={stats.pendingRequests}
-                            icon={<Clock className="h-6 w-6 text-yellow-600" />}
-                            color="bg-yellow-50"
-                            description="Awaiting response"
-                        />
-                        <StatCard
-                            title="Approved Sessions"
-                            value={stats.approvedSessions}
-                            icon={<CheckCircle className="h-6 w-6 text-green-600" />}
-                            color="bg-green-50"
-                            description="Scheduled"
-                        />
-                        <StatCard
-                            title="Completed Sessions"
-                            value={stats.completedSessions}
-                            icon={<AlertCircle className="h-6 w-6 text-indigo-600" />}
-                            color="bg-indigo-50"
-                            description="Finished"
-                        />
-                    </div>
+            <div>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Your Impact Summary</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {stats ? (
+                        <>
+                            <StatCard
+                                title="Students Helped"
+                                value={stats.totalStudentsHelped}
+                                icon={<Users className="h-6 w-6 text-blue-600" />}
+                                color="bg-blue-50"
+                                description="Unique students"
+                            />
+                            <StatCard
+                                title="Articles Created"
+                                value={stats.articlesCreated}
+                                icon={<BookOpen className="h-6 w-6 text-purple-600" />}
+                                color="bg-purple-50"
+                                description="Published articles"
+                            />
+                            <StatCard
+                                title="Pending Requests"
+                                value={stats.pendingRequests}
+                                icon={<Clock className="h-6 w-6 text-yellow-600" />}
+                                color="bg-yellow-50"
+                                description="Awaiting response"
+                            />
+                            <StatCard
+                                title="Approved Sessions"
+                                value={stats.approvedSessions}
+                                icon={<CheckCircle className="h-6 w-6 text-green-600" />}
+                                color="bg-green-50"
+                                description="Scheduled"
+                            />
+                            <StatCard
+                                title="Completed Sessions"
+                                value={stats.completedSessions}
+                                icon={<AlertCircle className="h-6 w-6 text-indigo-600" />}
+                                color="bg-indigo-50"
+                                description="Finished"
+                            />
+                        </>
+                    ) : (
+                        [1, 2, 3, 4, 5].map((i) => (
+                            <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <Skeleton width={48} height={48} className="mb-3 rounded-lg" />
+                                <Skeleton width={100} height={16} className="mb-2" />
+                                <Skeleton width={60} height={32} />
+                            </div>
+                        ))
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Session Requests Section */}
             <div>
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Pending Session Requests</h2>
 
                 {loading ? (
-                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                        <p className="text-gray-500">Loading requests...</p>
+                    <div className="grid gap-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                <div>
+                                    <Skeleton width={150} height={24} className="mb-2" />
+                                    <Skeleton width={100} height={16} />
+                                    <div className="flex items-center mt-2">
+                                        <Skeleton width={16} height={16} className="mr-2" />
+                                        <Skeleton width={120} height={16} />
+                                    </div>
+                                </div>
+                                <div className="flex space-x-3 mt-4 sm:mt-0">
+                                    <Skeleton width={100} height={40} />
+                                    <Skeleton width={100} height={40} />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : requests.length === 0 ? (
                     <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
@@ -144,6 +175,23 @@ const CounselorDashboard = () => {
                                         <Calendar className="h-4 w-4 mr-2" />
                                         {new Date(req.scheduled_start).toLocaleString()}
                                     </div>
+
+                                    {/* Stress Test Screening */}
+                                    {req.student.stress_tests && req.student.stress_tests.length > 0 && (
+                                        <div className="mt-3 flex items-center">
+                                            <span className="text-xs font-semibold text-gray-500 mr-2">Screening Result:</span>
+                                            <span className={`px-2 py-0.5 rounded text-xs font-medium border ${req.student.stress_tests[0].category === 'NORMAL' ? 'bg-green-100 text-green-800 border-green-200' :
+                                                    req.student.stress_tests[0].category === 'RINGAN' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                                                        req.student.stress_tests[0].category === 'SEDANG' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                                            'bg-red-100 text-red-800 border-red-200'
+                                                }`}>
+                                                {req.student.stress_tests[0].category} ({req.student.stress_tests[0].total_score})
+                                            </span>
+                                            <span className="text-xs text-gray-400 ml-2">
+                                                {new Date(req.student.stress_tests[0].taken_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex space-x-3 mt-4 sm:mt-0">

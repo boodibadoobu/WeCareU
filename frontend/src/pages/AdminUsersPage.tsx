@@ -4,6 +4,7 @@ import { Check, X, Edit, Trash2, Plus } from 'lucide-react';
 import UserFormModal from '../components/UserFormModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface UserData {
     id: number;
@@ -210,7 +211,43 @@ const AdminUsersPage = () => {
                 </div>
 
                 {loading ? (
-                    <div className="p-8 text-center text-gray-500">Loading...</div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium">Name</th>
+                                    <th className="px-6 py-4 font-medium">Email / NIM</th>
+                                    <th className="px-6 py-4 font-medium">Role</th>
+                                    <th className="px-6 py-4 font-medium">Status</th>
+                                    <th className="px-6 py-4 font-medium text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={150} height={20} />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={200} height={20} />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={80} height={24} className="rounded-full" />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={80} height={24} className="rounded-full" />
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Skeleton width={24} height={24} />
+                                                <Skeleton width={24} height={24} />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : users.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">No users found.</div>
                 ) : filteredUsers.length === 0 ? (

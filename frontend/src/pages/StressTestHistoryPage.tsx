@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Calendar, TrendingUp, Eye, Edit, Trash2 } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface StressTestResult {
     id: number;
@@ -99,8 +100,41 @@ const StressTestHistoryPage = () => {
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto mt-8 mb-12">
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                    <p className="text-gray-500">Loading your stress test history...</p>
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center">
+                        <Skeleton className="h-14 w-14 mr-4 bg-green-100" />
+                        <div>
+                            <Skeleton width={200} height={32} className="mb-2" />
+                            <Skeleton width={300} height={20} />
+                        </div>
+                    </div>
+                    <Skeleton width={150} height={40} />
+                </div>
+
+                <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center flex-1">
+                                    <Skeleton variant="circular" width={48} height={48} className="mr-4" />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <Skeleton width={80} height={24} className="rounded-full" />
+                                            <Skeleton width={100} height={24} />
+                                        </div>
+                                        <div className="flex items-center">
+                                            <Skeleton width={16} height={16} className="mr-2" />
+                                            <Skeleton width={150} height={20} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Skeleton width={100} height={40} />
+                                    <Skeleton width={100} height={40} />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         );

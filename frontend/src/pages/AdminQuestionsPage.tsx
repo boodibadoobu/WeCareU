@@ -4,6 +4,7 @@ import { Edit, Trash2, Plus, BookOpen, RefreshCw } from 'lucide-react';
 import QuestionFormModal from '../components/QuestionFormModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface Question {
     id: number;
@@ -163,7 +164,43 @@ const AdminQuestionsPage = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {loading ? (
-                    <div className="p-8 text-center text-gray-500">Loading questions...</div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium">ID</th>
+                                    <th className="px-6 py-4 font-medium">Question Text</th>
+                                    <th className="px-6 py-4 font-medium">Dimension</th>
+                                    <th className="px-6 py-4 font-medium">Status</th>
+                                    <th className="px-6 py-4 font-medium text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={40} height={20} />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={400} height={20} />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={80} height={24} className="rounded-full" />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Skeleton width={60} height={24} className="rounded-full" />
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Skeleton width={24} height={24} />
+                                                <Skeleton width={24} height={24} />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : questions.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         No questions found. Click "Add Question" to create your first question.

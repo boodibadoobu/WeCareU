@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, History, Edit, Trash2, TrendingUp, Award } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface StressTestStats {
     totalTests: number;
@@ -127,7 +128,27 @@ const StressTestMenuPage = () => {
             </div>
 
             {/* Statistics Card */}
-            {!loading && stats.latestTest && (
+            {loading ? (
+                <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl shadow-sm border border-indigo-100 mb-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <Skeleton width={48} height={48} variant="circular" className="mr-4 bg-white/50" />
+                            <div>
+                                <Skeleton width={150} height={24} className="mb-2 bg-white/50" />
+                                <div className="flex gap-2">
+                                    <Skeleton width={80} height={24} className="rounded-full bg-white/50" />
+                                    <Skeleton width={100} height={24} className="bg-white/50" />
+                                </div>
+                                <Skeleton width={120} height={16} className="mt-2 bg-white/50" />
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <Skeleton width={120} height={20} className="mb-1 ml-auto bg-white/50" />
+                            <Skeleton width={40} height={36} className="ml-auto bg-white/50" />
+                        </div>
+                    </div>
+                </div>
+            ) : stats.latestTest && (
                 <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl shadow-sm border border-indigo-100 mb-8">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">

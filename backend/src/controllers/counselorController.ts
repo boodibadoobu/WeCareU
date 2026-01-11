@@ -24,7 +24,23 @@ export const getSessionRequests = async (req: Request, res: Response) => {
     try {
         const sessions = await prisma.session.findMany({
             where: { counselor_id: counselorId, status: 'PENDING' },
-            include: { student: { select: { full_name: true, nim: true } } }
+            include: {
+                student: {
+                    select: {
+                        full_name: true,
+                        nim: true,
+                        stress_tests: {
+                            take: 1,
+                            orderBy: { taken_at: 'desc' },
+                            select: {
+                                total_score: true,
+                                category: true,
+                                taken_at: true
+                            }
+                        }
+                    }
+                }
+            }
         });
         res.json(sessions);
     } catch (error) {

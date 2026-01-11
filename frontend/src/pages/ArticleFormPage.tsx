@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import api from '../api/axios';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 import { useAuth } from '../context/AuthContext';
 
 interface ArticleFormData {
@@ -125,8 +126,34 @@ const ArticleFormPage = () => {
     if (loading && isEditMode) {
         return (
             <div className="max-w-3xl mx-auto mt-8 mb-12">
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-                    <p className="text-gray-500">Loading article...</p>
+                <Skeleton width={120} height={20} className="mb-6" />
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <Skeleton width={200} height={32} className="mb-6" />
+
+                    <div className="space-y-6">
+                        <div>
+                            <Skeleton width={100} height={20} className="mb-2" />
+                            <Skeleton width="100%" height={42} />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <Skeleton width={80} height={20} className="mb-2" />
+                                <Skeleton width="100%" height={42} />
+                            </div>
+                            <div>
+                                <Skeleton width={100} height={20} className="mb-2" />
+                                <Skeleton width="100%" height={42} />
+                            </div>
+                        </div>
+
+                        <Skeleton height={150} className="rounded-lg" />
+
+                        <div>
+                            <Skeleton width={80} height={20} className="mb-2" />
+                            <Skeleton width="100%" height={250} />
+                        </div>
+                    </div>
                 </div>
             </div>
         );
