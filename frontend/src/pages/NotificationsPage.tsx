@@ -22,6 +22,7 @@ const NotificationsPage = () => {
     const [displayedNotifications, setDisplayedNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [limit, setLimit] = useState(7);
@@ -85,6 +86,21 @@ const NotificationsPage = () => {
         }
     };
 
+    const handleDeleteAllRead = async () => {
+        try {
+            setDeleting(true);
+            setError(null);
+            await api.delete('/notifications/read/clear-all');
+            setNotifications(notifications.filter(n => !n.is_read));
+            setShowDeleteAllConfirm(false);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete notifications');
+            setShowDeleteAllConfirm(false);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const handleLoadMore = () => {
         setLimit(prev => prev + 7);
     };
@@ -116,6 +132,17 @@ const NotificationsPage = () => {
                 onCancel={() => setDeleteId(null)}
             />
 
+            <ConfirmDialog
+                isOpen={showDeleteAllConfirm}
+                title="Clear Read Notifications"
+                message="Are you sure you want to delete all read notifications? This action cannot be undone."
+                confirmText="Delete All"
+                cancelText="Cancel"
+                type="danger"
+                onConfirm={handleDeleteAllRead}
+                onCancel={() => setShowDeleteAllConfirm(false)}
+            />
+
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center">
                     <Bell className="h-6 w-6 mr-2 text-green-600" />
@@ -129,6 +156,15 @@ const NotificationsPage = () => {
                         >
                             <CheckCheck className="h-4 w-4 mr-1" />
                             Mark all as read
+                        </button>
+                    )}
+                    {notifications.some(n => n.is_read) && (
+                        <button
+                            onClick={() => setShowDeleteAllConfirm(true)}
+                            className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center"
+                        >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete all read
                         </button>
                     )}
                     {user?.role === 'ADMIN' && (

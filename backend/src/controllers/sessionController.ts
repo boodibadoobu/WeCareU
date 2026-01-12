@@ -288,3 +288,34 @@ export const deleteSession = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error deleting session' });
     }
 };
+// Bulk Delete Session History (Student)
+export const deleteSessionHistory = async (req: Request, res: Response) => {
+    const studentId = req.user?.id;
+    const { status } = req.query; // Optional status filter: 'CANCELLED', 'REJECTED', 'COMPLETED'
+
+    try {
+        const whereClause: any = {
+            student_id: studentId,
+            status: { in: ['CANCELLED', 'REJECTED', 'COMPLETED'] }
+        };
+
+        if (status) {
+            if (!['CANCELLED', 'REJECTED', 'COMPLETED'].includes(String(status))) {
+                return res.status(400).json({ message: 'Invalid status for deletion' });
+            }
+            whereClause.status = status;
+        }
+
+        const result = await prisma.session.deleteMany({
+            where: whereClause
+        });
+
+        res.json({
+            message: 'Session history deleted successfully',
+            count: result.count
+        });
+    } catch (error) {
+        console.error('Error deleting session history:', error);
+        res.status(500).json({ message: 'Error deleting session history' });
+    }
+};

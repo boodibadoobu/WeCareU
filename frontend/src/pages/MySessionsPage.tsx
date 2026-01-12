@@ -26,6 +26,7 @@ const MySessionsPage = () => {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [cancelling, setCancelling] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [bulkDeleteStatus, setBulkDeleteStatus] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [limit, setLimit] = useState(7);
 
@@ -101,6 +102,23 @@ const MySessionsPage = () => {
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to delete session');
             setDeleteId(null);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!bulkDeleteStatus) return;
+
+        try {
+            setDeleting(true);
+            setError(null);
+            await api.delete(`/sessions/history?status=${bulkDeleteStatus}`);
+            fetchSessions();
+            setBulkDeleteStatus(null);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete sessions');
+            setBulkDeleteStatus(null);
         } finally {
             setDeleting(false);
         }
@@ -201,7 +219,40 @@ const MySessionsPage = () => {
                 onCancel={() => setDeleteId(null)}
             />
 
-            <h2 className="text-2xl font-bold text-gray-800">My Sessions</h2>
+
+
+            <ConfirmDialog
+                isOpen={bulkDeleteStatus !== null}
+                title={`Clear ${bulkDeleteStatus} Sessions`}
+                message={`Are you sure you want to delete all ${bulkDeleteStatus?.toLowerCase()} sessions from your history? This action cannot be undone.`}
+                confirmText="Delete All"
+                cancelText="Cancel"
+                type="danger"
+                onConfirm={handleBulkDelete}
+                onCancel={() => setBulkDeleteStatus(null)}
+            />
+
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-800">My Sessions</h2>
+                <div className="flex gap-2">
+                    {sessions.some(s => s.status === 'CANCELLED') && (
+                        <button
+                            onClick={() => setBulkDeleteStatus('CANCELLED')}
+                            className="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                            Clear Cancelled
+                        </button>
+                    )}
+                    {sessions.some(s => s.status === 'REJECTED') && (
+                        <button
+                            onClick={() => setBulkDeleteStatus('REJECTED')}
+                            className="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                            Clear Rejected
+                        </button>
+                    )}
+                </div>
+            </div>
 
             <div className="grid gap-4">
                 {loading ? (

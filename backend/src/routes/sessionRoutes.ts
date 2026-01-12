@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createSession, getMySessions, rescheduleSession, cancelSession, deleteSession } from '../controllers/sessionController';
+import { createSession, getMySessions, rescheduleSession, cancelSession, deleteSession, deleteSessionHistory } from '../controllers/sessionController';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware';
 import prisma from '../utils/prisma';
 
@@ -11,6 +11,7 @@ router.post('/', requireRole(['STUDENT']), createSession);
 router.get('/my', requireRole(['STUDENT']), getMySessions);
 router.put('/:id/reschedule', requireRole(['STUDENT']), rescheduleSession);
 router.put('/:id', cancelSession); // Both student and counselor can cancel
+router.delete('/history', requireRole(['STUDENT']), deleteSessionHistory);
 router.delete('/:id', requireRole(['STUDENT']), deleteSession);
 router.get('/:id/chat', async (req, res) => {
     const { id } = req.params;
