@@ -34,7 +34,7 @@ const ArticleFormPage = () => {
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(!!id);
 
     const thumbnailUrl = watch('thumbnail_url');
 

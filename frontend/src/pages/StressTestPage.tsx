@@ -16,7 +16,7 @@ const StressTestPage = () => {
     const [answers, setAnswers] = useState<{ [key: number]: number }>({});
     const [submitted, setSubmitted] = useState(false);
     const [result, setResult] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
