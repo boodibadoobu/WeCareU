@@ -34,7 +34,10 @@ router.get('/:id/chat', async (req, res) => {
             }
         });
 
-        res.json(chatSession?.messages || []);
+        res.json({
+            messages: chatSession?.messages || [],
+            status: session.status
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching chat history' });
     }

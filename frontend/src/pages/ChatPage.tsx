@@ -17,7 +17,7 @@ const ChatPage = () => {
     const { id } = useParams<{ id: string }>();
     const { user, token } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
-    const [newMessage, setNewMessage] = useState('');
+    const [status, setStatus] = useState<string>('');
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -68,12 +68,14 @@ const ChatPage = () => {
 
     const fetchHistory = async () => {
         try {
-            // We need an endpoint to get chat history. 
-            // For now, we assume the socket handles real-time, but we need history.
-            // I'll add a backend route for this later or now.
-            // Let's assume GET /api/sessions/:id/chat exists.
             const res = await api.get(`/sessions/${id}/chat`);
-            setMessages(res.data);
+            // Handle both old format (array) and new format (object) just in case
+            if (Array.isArray(res.data)) {
+                setMessages(res.data);
+            } else {
+                setMessages(res.data.messages);
+                setStatus(res.data.status);
+            }
         } catch (err) {
             console.error('Failed to fetch chat history', err);
         }
@@ -97,8 +99,16 @@ const ChatPage = () => {
 
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                 <h2 className="font-semibold text-gray-800">Chat Session #{id}</h2>
+                {status && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' :
+                        status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                        }`}>
+                        {status}
+                    </span>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -120,21 +130,29 @@ const ChatPage = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSend} className="p-4 border-t border-gray-100 flex gap-2">
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <button
-                    type="submit"
-                    className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                    <Send className="h-5 w-5" />
-                </button>
-            </form>
+            {status === 'COMPLETED' ? (
+                <div className="p-4 border-t border-gray-100 bg-gray-50 text-center">
+                    <p className="text-gray-500 italic">
+                        This Session Has been completed. You cannot send or receive more message from this chat
+                    </p>
+                </div>
+            ) : (
+                <form onSubmit={handleSend} className="p-4 border-t border-gray-100 flex gap-2">
+                    <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <button
+                        type="submit"
+                        className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                        <Send className="h-5 w-5" />
+                    </button>
+                </form>
+            )}
         </div>
     );
 };
