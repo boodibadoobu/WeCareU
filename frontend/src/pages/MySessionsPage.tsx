@@ -5,6 +5,7 @@ import { Calendar, MessageCircle, X, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface Session {
     id: number;
@@ -20,6 +21,7 @@ const MySessionsPage = () => {
     const { user } = useAuth();
     const [sessions, setSessions] = useState<Session[]>([]);
     const [displayedSessions, setDisplayedSessions] = useState<Session[]>([]);
+    const [loading, setLoading] = useState(true);
     const [cancelId, setCancelId] = useState<number | null>(null);
     const [cancelling, setCancelling] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -42,12 +44,15 @@ const MySessionsPage = () => {
 
     const fetchSessions = async () => {
         try {
+            setLoading(true);
             setError(null);
             const endpoint = user?.role === 'COUNSELOR' ? '/counselors/my-activity' : '/sessions/my';
             const res = await api.get(endpoint);
             setSessions(res.data);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to load sessions');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -163,61 +168,88 @@ const MySessionsPage = () => {
             <h2 className="text-2xl font-bold text-gray-800">My Sessions</h2>
 
             <div className="grid gap-4">
-                {displayedSessions.map((session) => (
-                    <div key={session.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group">
-                        <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                                <div className="flex items-center mb-2">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                                        {session.status}
-                                    </span>
-                                </div>
-                                <h3 className="font-semibold text-lg text-gray-900">
-                                    {user?.role === 'STUDENT' ? `With ${session.counselor?.full_name}` : `With ${session.student?.full_name}`}
-                                </h3>
-                                <div className="flex items-center mt-2 text-gray-600">
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    {new Date(session.scheduled_start).toLocaleString()}
+                {loading ? (
+                    <>
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <Skeleton width={80} height={24} className="mb-2 rounded-full" />
+                                        <Skeleton width={200} height={24} className="mb-2" />
+                                        <div className="flex items-center">
+                                            <Skeleton width={16} height={16} className="mr-2" />
+                                            <Skeleton width={150} height={20} />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Skeleton width={80} height={36} className="rounded-lg" />
+                                        <Skeleton width={80} height={36} className="rounded-lg" />
+                                    </div>
                                 </div>
                             </div>
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        {
+                            displayedSessions.map((session) => (
+                                <div key={session.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <div className="flex items-center mb-2">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
+                                                    {session.status}
+                                                </span>
+                                            </div>
+                                            <h3 className="font-semibold text-lg text-gray-900">
+                                                {user?.role === 'STUDENT' ? `With ${session.counselor?.full_name}` : `With ${session.student?.full_name}`}
+                                            </h3>
+                                            <div className="flex items-center mt-2 text-gray-600">
+                                                <Calendar className="h-4 w-4 mr-2" />
+                                                {new Date(session.scheduled_start).toLocaleString()}
+                                            </div>
+                                        </div>
 
-                            <div className="flex items-center gap-2">
-                                {session.status === 'APPROVED' && (
-                                    <Link
-                                        to={`/chat/${session.id}`}
-                                        className="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                                    >
-                                        <MessageCircle className="h-4 w-4 mr-2" />
-                                        Chat
-                                    </Link>
-                                )}
+                                        <div className="flex items-center gap-2">
+                                            {session.status === 'APPROVED' && (
+                                                <Link
+                                                    to={`/chat/${session.id}`}
+                                                    className="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                                >
+                                                    <MessageCircle className="h-4 w-4 mr-2" />
+                                                    Chat
+                                                </Link>
+                                            )}
 
-                                {user?.role === 'STUDENT' && canReschedule(session) && (
-                                    <button
-                                        onClick={() => handleRescheduleClick(session)}
-                                        className="flex items-center px-4 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors"
-                                        title="Reschedule Session"
-                                    >
-                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                        Reschedule
-                                    </button>
-                                )}
+                                            {user?.role === 'STUDENT' && canReschedule(session) && (
+                                                <button
+                                                    onClick={() => handleRescheduleClick(session)}
+                                                    className="flex items-center px-4 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors"
+                                                    title="Reschedule Session"
+                                                >
+                                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                                    Reschedule
+                                                </button>
+                                            )}
 
-                                {canCancelSession(session) && (
-                                    <button
-                                        onClick={(e) => handleCancelClick(session.id, e)}
-                                        disabled={cancelling}
-                                        className="flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                                        title="Cancel Session"
-                                    >
-                                        <X className="h-4 w-4 mr-2" />
-                                        Cancel
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
+                                            {canCancelSession(session) && (
+                                                <button
+                                                    onClick={(e) => handleCancelClick(session.id, e)}
+                                                    disabled={cancelling}
+                                                    className="flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                                                    title="Cancel Session"
+                                                >
+                                                    <X className="h-4 w-4 mr-2" />
+                                                    Cancel
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        }
+                    </>
+                )}
 
                 {limit < sessions.length && (
                     <div className="text-center py-4">

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface Notification {
     id: number;
@@ -19,6 +20,7 @@ const NotificationsPage = () => {
     const { user } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [displayedNotifications, setDisplayedNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -35,11 +37,14 @@ const NotificationsPage = () => {
 
     const fetchNotifications = async () => {
         try {
+            setLoading(true);
             setError(null);
             const res = await api.get('/notifications');
             setNotifications(res.data.data || []);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to load notifications');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -139,7 +144,27 @@ const NotificationsPage = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-                {displayedNotifications.length === 0 ? (
+                {loading ? (
+                    <div className="p-4 space-y-4">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <div key={i} className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Skeleton width={80} height={20} className="rounded" />
+                                        <Skeleton variant="circular" width={8} height={8} />
+                                    </div>
+                                    <Skeleton width={200} height={20} className="mb-1" />
+                                    <Skeleton width="90%" height={16} className="mb-2" />
+                                    <Skeleton width={120} height={12} />
+                                </div>
+                                <div className="flex gap-2 ml-4">
+                                    <Skeleton width={24} height={24} />
+                                    <Skeleton width={24} height={24} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : displayedNotifications.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         No notifications yet.
                     </div>

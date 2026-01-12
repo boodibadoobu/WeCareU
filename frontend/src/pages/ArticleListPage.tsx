@@ -5,6 +5,7 @@ import { BookOpen, User, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
+import Skeleton from '../components/Skeleton';
 
 interface Article {
     id: number;
@@ -22,6 +23,7 @@ const ArticleListPage = () => {
     const { user } = useAuth();
     const [articles, setArticles] = useState<Article[]>([]);
     const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]);
+    const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -39,11 +41,14 @@ const ArticleListPage = () => {
 
     const fetchArticles = async () => {
         try {
+            setLoading(true);
             const queryParam = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
             const res = await api.get(`/articles${queryParam}`);
             setArticles(res.data);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to load articles');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -129,60 +134,83 @@ const ArticleListPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayedArticles.map((article) => (
-                    <div key={article.id} className="group relative">
-                        <Link to={`/articles/${article.id}`} className="block">
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
-                                <div className="h-48 bg-gray-200 relative">
-                                    {article.thumbnail_url ? (
-                                        <img src={article.thumbnail_url} alt={article.title} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-green-50">
-                                            <BookOpen className="h-12 w-12 text-green-200" />
-                                        </div>
-                                    )}
-                                    <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-green-700">
-                                        {article.category}
-                                    </span>
-                                </div>
+                {loading ? (
+                    <>
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col">
+                                <Skeleton height={192} className="w-full" />
                                 <div className="p-5 flex-1 flex flex-col">
-                                    <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors line-clamp-2">
-                                        {article.title}
-                                    </h3>
-                                    <div className="mt-auto pt-4 flex items-center justify-between text-sm text-gray-500 border-t border-gray-50">
+                                    <Skeleton width="80%" height={28} className="mb-4" />
+                                    <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-50">
                                         <div className="flex items-center">
-                                            <User className="h-4 w-4 mr-2" />
-                                            <span>{article.author.full_name}</span>
+                                            <Skeleton variant="circular" width={16} height={16} className="mr-2" />
+                                            <Skeleton width={100} height={16} />
                                         </div>
-                                        <span>{new Date(article.created_at).toLocaleDateString()}</span>
+                                        <Skeleton width={80} height={16} />
                                     </div>
                                 </div>
                             </div>
-                        </Link>
-
-                        {/* Action Buttons */}
-                        {canModifyArticle(article) && (
-                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Link
-                                    to={`/articles/edit/${article.id}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md"
-                                    title="Edit"
-                                >
-                                    <Edit className="h-4 w-4" />
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        {displayedArticles.map((article) => (
+                            <div key={article.id} className="group relative">
+                                <Link to={`/articles/${article.id}`} className="block">
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
+                                        <div className="h-48 bg-gray-200 relative">
+                                            {article.thumbnail_url ? (
+                                                <img src={article.thumbnail_url} alt={article.title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-green-50">
+                                                    <BookOpen className="h-12 w-12 text-green-200" />
+                                                </div>
+                                            )}
+                                            <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-green-700">
+                                                {article.category}
+                                            </span>
+                                        </div>
+                                        <div className="p-5 flex-1 flex flex-col">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors line-clamp-2">
+                                                {article.title}
+                                            </h3>
+                                            <div className="mt-auto pt-4 flex items-center justify-between text-sm text-gray-500 border-t border-gray-50">
+                                                <div className="flex items-center">
+                                                    <User className="h-4 w-4 mr-2" />
+                                                    <span>{article.author.full_name}</span>
+                                                </div>
+                                                <span>{new Date(article.created_at).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </Link>
-                                <button
-                                    onClick={(e) => handleDeleteClick(article.id, e)}
-                                    disabled={deleting}
-                                    className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md disabled:opacity-50"
-                                    title="Delete"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
+
+                                {/* Action Buttons */}
+                                {canModifyArticle(article) && (
+                                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Link
+                                            to={`/articles/edit/${article.id}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md"
+                                            title="Edit"
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                        </Link>
+                                        <button
+                                            onClick={(e) => handleDeleteClick(article.id, e)}
+                                            disabled={deleting}
+                                            className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md disabled:opacity-50"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                ))}
+                        ))
+                        }
+                    </>
+                )}
             </div>
 
             {limit < articles.length && (

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
+import Skeleton from '../components/Skeleton';
 
 interface Counselor {
     id: number;
@@ -12,6 +13,7 @@ interface Counselor {
 
 const StudentDashboard = () => {
     const [counselors, setCounselors] = useState<Counselor[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedCounselor, setSelectedCounselor] = useState<Counselor | null>(null);
     const [bookingDate, setBookingDate] = useState('');
     const [bookingTime, setBookingTime] = useState('');
@@ -33,10 +35,13 @@ const StudentDashboard = () => {
 
     const fetchCounselors = async () => {
         try {
+            setLoading(true);
             const res = await api.get('/counselors');
             setCounselors(res.data);
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -78,32 +83,50 @@ const StudentDashboard = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {counselors.map((counselor) => (
-                    <div key={counselor.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="flex items-center mb-4">
-                            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xl">
-                                {counselor.full_name.charAt(0)}
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div className="flex items-center mb-4">
+                                <Skeleton variant="circular" width={48} height={48} className="mr-4" />
+                                <div className="flex-1">
+                                    <Skeleton width={150} height={20} className="mb-2" />
+                                    <Skeleton width={100} height={16} />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <h3 className="font-semibold text-lg text-gray-900">{counselor.full_name}</h3>
-                                <p className="text-sm text-gray-500">{counselor.counselor_details?.specialization}</p>
+                            <Skeleton width={120} height={16} className="mb-4" />
+                            <Skeleton width="100%" height={40} className="rounded-lg" />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {counselors.map((counselor) => (
+                        <div key={counselor.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div className="flex items-center mb-4">
+                                <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xl">
+                                    {counselor.full_name.charAt(0)}
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="font-semibold text-lg text-gray-900">{counselor.full_name}</h3>
+                                    <p className="text-sm text-gray-500">{counselor.counselor_details?.specialization}</p>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="text-sm text-gray-600 mb-4">
-                            <p>Experience: {counselor.counselor_details?.years_experience} years</p>
-                        </div>
+                            <div className="text-sm text-gray-600 mb-4">
+                                <p>Experience: {counselor.counselor_details?.years_experience} years</p>
+                            </div>
 
-                        <button
-                            onClick={() => setSelectedCounselor(counselor)}
-                            className="w-full bg-green-50 text-green-700 py-2 rounded-lg hover:bg-green-100 font-medium transition-colors"
-                        >
-                            Book Session
-                        </button>
-                    </div>
-                ))}
-            </div>
+                            <button
+                                onClick={() => setSelectedCounselor(counselor)}
+                                className="w-full bg-green-50 text-green-700 py-2 rounded-lg hover:bg-green-100 font-medium transition-colors"
+                            >
+                                Book Session
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Booking Modal */}
             {selectedCounselor && (
