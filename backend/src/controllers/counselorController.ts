@@ -188,7 +188,22 @@ export const getCounselorActivity = async (req: Request, res: Response) => {
     try {
         const sessions = await prisma.session.findMany({
             where: { counselor_id: counselorId, status: { in: ['COMPLETED', 'APPROVED', 'REJECTED'] } },
-            include: { student: { select: { full_name: true } } },
+            include: {
+                student: {
+                    select: {
+                        full_name: true,
+                        stress_tests: {
+                            take: 1,
+                            orderBy: { taken_at: 'desc' },
+                            select: {
+                                total_score: true,
+                                category: true,
+                                taken_at: true
+                            }
+                        }
+                    }
+                }
+            },
             orderBy: { scheduled_start: 'desc' }
         });
         res.json(sessions);

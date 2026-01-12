@@ -52,6 +52,50 @@ export const createSession = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Scheduled start time is required' });
     }
 
+    // --- SCREENING VALIDATION ---
+    try {
+        // 1. Pre-test Check: Student must have taken at least one stress test ever
+        const hasStressTest = await prisma.stressTest.findFirst({
+            where: { student_id: studentId }
+        });
+
+        if (!hasStressTest) {
+            return res.status(400).json({
+                message: 'Screening Required: You must complete a stress test before booking your first session.',
+                code: 'PRE_TEST_REQUIRED'
+            });
+        }
+
+        // 2. Post-test Check: If student has a previous COMPLETED session, they must have taken a test AFTER it.
+        const lastCompletedSession = await prisma.session.findFirst({
+            where: {
+                student_id: studentId,
+                status: 'COMPLETED'
+            },
+            orderBy: { scheduled_end: 'desc' }
+        });
+
+        if (lastCompletedSession) {
+            const postTest = await prisma.stressTest.findFirst({
+                where: {
+                    student_id: studentId,
+                    taken_at: { gt: lastCompletedSession.scheduled_end }
+                }
+            });
+
+            if (!postTest) {
+                return res.status(400).json({
+                    message: 'Post-Counseling Screening Required: You must complete a stress test to evaluate your progress after your last session.',
+                    code: 'POST_TEST_REQUIRED'
+                });
+            }
+        }
+    } catch (validationError) {
+        console.error('Validation error:', validationError);
+        return res.status(500).json({ message: 'Error validating session requirements' });
+    }
+    // ----------------------------
+
     try {
         const startTime = new Date(scheduled_start);
         const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration

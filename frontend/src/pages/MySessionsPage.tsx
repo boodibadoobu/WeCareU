@@ -14,8 +14,16 @@ interface Session {
     status: string;
     reschedule_count: number;
     counselor?: { full_name: string };
-    student?: { full_name: string };
+    student?: {
+        full_name: string;
+        stress_tests?: {
+            total_score: number;
+            category: string;
+            taken_at: string;
+        }[];
+    };
 }
+
 
 const MySessionsPage = () => {
     const { user } = useAuth();

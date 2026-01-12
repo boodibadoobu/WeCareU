@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import Skeleton from '../components/Skeleton';
+import { Link } from 'react-router-dom';
 
 interface Counselor {
     id: number;
@@ -18,17 +19,19 @@ const StudentDashboard = () => {
     const [bookingDate, setBookingDate] = useState('');
     const [bookingTime, setBookingTime] = useState('');
     const [message, setMessage] = useState('');
+    const [showScreeningLink, setShowScreeningLink] = useState(false);
 
     useEffect(() => {
         fetchCounselors();
     }, []);
 
-    // Auto-dismiss message after 5 seconds
+    // Auto-dismiss message after delay
     useEffect(() => {
         if (message) {
             const timer = setTimeout(() => {
                 setMessage('');
-            }, 5000);
+                setShowScreeningLink(false);
+            }, 8000);
             return () => clearTimeout(timer);
         }
     }, [message]);
@@ -61,12 +64,19 @@ const StudentDashboard = () => {
             setBookingDate('');
             setBookingTime('');
             setMessage('✅ Session booked successfully! Waiting for counselor approval.');
+            setShowScreeningLink(false);
         } catch (err: any) {
             // Error: Close modal and show error message
             setSelectedCounselor(null);
             setBookingDate('');
             setBookingTime('');
-            setMessage('❌ ' + (err.response?.data?.message || 'Booking failed. Please try again.'));
+
+            const errorMsg = err.response?.data?.message || 'Booking failed. Please try again.';
+            setMessage('❌ ' + errorMsg);
+
+            if (err.response?.data?.code === 'PRE_TEST_REQUIRED' || err.response?.data?.code === 'POST_TEST_REQUIRED') {
+                setShowScreeningLink(true);
+            }
         }
     };
 
@@ -75,11 +85,19 @@ const StudentDashboard = () => {
             <h2 className="text-2xl font-bold text-gray-800">Find a Counselor</h2>
 
             {message && (
-                <div className={`p-4 rounded-lg ${message.startsWith('❌')
+                <div className={`p-4 rounded-lg flex items-center justify-between ${message.startsWith('❌')
                     ? 'bg-red-50 text-red-600 border border-red-200'
                     : 'bg-blue-50 text-blue-600 border border-blue-200'
                     }`}>
-                    {message}
+                    <span>{message}</span>
+                    {showScreeningLink && (
+                        <Link
+                            to="/stress-test"
+                            className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium whitespace-nowrap"
+                        >
+                            Take Stress Test
+                        </Link>
+                    )}
                 </div>
             )}
 
