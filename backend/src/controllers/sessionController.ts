@@ -288,16 +288,24 @@ export const deleteSession = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error deleting session' });
     }
 };
-// Bulk Delete Session History (Student)
+// Bulk Delete Session History (Student & Counselor)
 export const deleteSessionHistory = async (req: Request, res: Response) => {
-    const studentId = req.user?.id;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
     const { status } = req.query; // Optional status filter: 'CANCELLED', 'REJECTED', 'COMPLETED'
 
     try {
         const whereClause: any = {
-            student_id: studentId,
             status: { in: ['CANCELLED', 'REJECTED', 'COMPLETED'] }
         };
+
+        if (userRole === 'STUDENT') {
+            whereClause.student_id = userId;
+        } else if (userRole === 'COUNSELOR') {
+            whereClause.counselor_id = userId;
+        } else {
+            return res.status(403).json({ message: 'Unauthorized role' });
+        }
 
         if (status) {
             if (!['CANCELLED', 'REJECTED', 'COMPLETED'].includes(String(status))) {
