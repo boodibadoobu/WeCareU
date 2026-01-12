@@ -273,16 +273,9 @@ export const deleteSession = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Session not found or unauthorized' });
         }
 
-        // Only allow deletion if session is PENDING or not yet started
-        if (session.status === 'COMPLETED') {
-            return res.status(400).json({ message: 'Cannot delete completed sessions' });
-        }
-
-        const now = new Date();
-        const sessionStart = new Date(session.scheduled_start);
-
-        if (now >= sessionStart) {
-            return res.status(400).json({ message: 'Cannot delete session that has already started' });
+        // Only allow deletion of inactive sessions (history)
+        if (['PENDING', 'APPROVED'].includes(session.status)) {
+            return res.status(400).json({ message: 'Cannot delete active sessions. Please cancel them first.' });
         }
 
         await prisma.session.delete({

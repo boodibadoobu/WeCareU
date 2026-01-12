@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MessageCircle, X, RefreshCw } from 'lucide-react';
+import { Calendar, MessageCircle, X, RefreshCw, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ErrorAlert from '../components/ErrorAlert';
@@ -23,7 +23,9 @@ const MySessionsPage = () => {
     const [displayedSessions, setDisplayedSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [cancelId, setCancelId] = useState<number | null>(null);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
     const [cancelling, setCancelling] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [limit, setLimit] = useState(7);
 
@@ -78,6 +80,29 @@ const MySessionsPage = () => {
             setCancelId(null);
         } finally {
             setCancelling(false);
+        }
+    };
+
+    const handleDeleteClick = (id: number, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDeleteId(id);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteId) return;
+
+        try {
+            setDeleting(true);
+            setError(null);
+            await api.delete(`/sessions/${deleteId}`);
+            fetchSessions();
+            setDeleteId(null);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete session');
+            setDeleteId(null);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -165,6 +190,17 @@ const MySessionsPage = () => {
                 onCancel={() => setCancelId(null)}
             />
 
+            <ConfirmDialog
+                isOpen={deleteId !== null}
+                title="Delete Session History"
+                message="Are you sure you want to delete this session from your history? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                type="danger"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteId(null)}
+            />
+
             <h2 className="text-2xl font-bold text-gray-800">My Sessions</h2>
 
             <div className="grid gap-4">
@@ -241,6 +277,18 @@ const MySessionsPage = () => {
                                                 >
                                                     <X className="h-4 w-4 mr-2" />
                                                     Cancel
+                                                </button>
+                                            )}
+
+                                            {['CANCELLED', 'REJECTED', 'COMPLETED'].includes(session.status) && (
+                                                <button
+                                                    onClick={(e) => handleDeleteClick(session.id, e)}
+                                                    disabled={deleting}
+                                                    className="flex items-center px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                                                    title="Delete History"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Delete
                                                 </button>
                                             )}
                                         </div>
