@@ -18,6 +18,7 @@ const ChatPage = () => {
     const { user, token } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [status, setStatus] = useState<string>('');
+    const [newMessage, setNewMessage] = useState('');
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
