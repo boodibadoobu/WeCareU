@@ -79,7 +79,7 @@ export const createSession = async (req: Request, res: Response) => {
             const postTest = await prisma.stressTest.findFirst({
                 where: {
                     student_id: studentId,
-                    taken_at: { gt: lastCompletedSession.scheduled_end }
+                    taken_at: { gt: lastCompletedSession.scheduled_start }
                 }
             });
 
