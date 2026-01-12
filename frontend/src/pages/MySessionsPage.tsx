@@ -306,7 +306,7 @@ const MySessionsPage = () => {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {session.status === 'APPROVED' && (
+                                            {['APPROVED', 'COMPLETED'].includes(session.status) && (
                                                 <Link
                                                     to={`/chat/${session.id}`}
                                                     className="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
