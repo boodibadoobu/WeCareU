@@ -23,7 +23,10 @@ export const getSessionRequests = async (req: Request, res: Response) => {
     const counselorId = req.user?.id;
     try {
         const sessions = await prisma.session.findMany({
-            where: { counselor_id: counselorId, status: 'PENDING' },
+            where: {
+                counselor_id: counselorId,
+                status: { in: ['PENDING', 'APPROVED'] }
+            },
             include: {
                 student: {
                     select: {
@@ -119,6 +122,33 @@ export const rejectSession = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error rejecting session:', error);
         res.status(500).json({ message: 'Error rejecting session' });
+    }
+};
+
+// Complete session
+export const completeSession = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const counselorId = req.user?.id;
+
+    try {
+        const session = await prisma.session.findUnique({ where: { id: Number(id) } });
+        if (!session || session.counselor_id !== counselorId) {
+            return res.status(404).json({ message: 'Session not found or unauthorized' });
+        }
+
+        if (session.status !== 'APPROVED') {
+            return res.status(400).json({ message: 'Only APPROVED sessions can be completed' });
+        }
+
+        await prisma.session.update({
+            where: { id: Number(id) },
+            data: { status: 'COMPLETED' }
+        });
+
+        res.json({ message: 'Session COMPLETED' });
+    } catch (error) {
+        console.error('Error completing session:', error);
+        res.status(500).json({ message: 'Error completing session' });
     }
 };
 

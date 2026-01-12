@@ -105,7 +105,7 @@ model Session {
 model SessionNote {
   id           Int      @id @default(autoincrement())
   session_id   Int      @unique
-  session      Session  @relation(fields: [session_id], references: [id])
+  session      Session  @relation(fields: [session_id], references: [id], onDelete: Cascade)
   counselor_id Int
   notes        String   @db.Text
   created_at   DateTime @default(now())
@@ -115,7 +115,7 @@ model SessionNote {
 model ChatSession {
   id         Int           @id @default(autoincrement())
   session_id Int           @unique
-  session    Session       @relation(fields: [session_id], references: [id])
+  session    Session       @relation(fields: [session_id], references: [id], onDelete: Cascade)
   messages   ChatMessage[]
   created_at DateTime      @default(now())
 }
@@ -123,7 +123,7 @@ model ChatSession {
 model ChatMessage {
   id              Int         @id @default(autoincrement())
   chat_session_id Int
-  chat_session    ChatSession @relation(fields: [chat_session_id], references: [id])
+  chat_session    ChatSession @relation(fields: [chat_session_id], references: [id], onDelete: Cascade)
   sender_id       Int
   sender          User        @relation(fields: [sender_id], references: [id])
   message_text    String      @db.Text

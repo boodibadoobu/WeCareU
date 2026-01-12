@@ -59,7 +59,7 @@ const CounselorDashboard = () => {
         }
     };
 
-    const handleAction = async (id: number, action: 'approve' | 'reject') => {
+    const handleAction = async (id: number, action: 'approve' | 'reject' | 'complete') => {
         try {
             await api.post(`/counselors/requests/${id}/${action}`);
             fetchRequests();
@@ -138,7 +138,7 @@ const CounselorDashboard = () => {
 
             {/* Session Requests Section */}
             <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Pending Session Requests</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Active Sessions & Requests</h2>
 
                 {loading ? (
                     <div className="grid gap-4">
@@ -181,9 +181,9 @@ const CounselorDashboard = () => {
                                         <div className="mt-3 flex items-center">
                                             <span className="text-xs font-semibold text-gray-500 mr-2">Screening Result:</span>
                                             <span className={`px-2 py-0.5 rounded text-xs font-medium border ${req.student.stress_tests[0].category === 'NORMAL' ? 'bg-green-100 text-green-800 border-green-200' :
-                                                    req.student.stress_tests[0].category === 'RINGAN' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                                                        req.student.stress_tests[0].category === 'SEDANG' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                                                            'bg-red-100 text-red-800 border-red-200'
+                                                req.student.stress_tests[0].category === 'RINGAN' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                                                    req.student.stress_tests[0].category === 'SEDANG' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                                        'bg-red-100 text-red-800 border-red-200'
                                                 }`}>
                                                 {req.student.stress_tests[0].category} ({req.student.stress_tests[0].total_score})
                                             </span>
@@ -195,20 +195,32 @@ const CounselorDashboard = () => {
                                 </div>
 
                                 <div className="flex space-x-3 mt-4 sm:mt-0">
-                                    <button
-                                        onClick={() => handleAction(req.id, 'reject')}
-                                        className="flex items-center px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                                    >
-                                        <X className="h-4 w-4 mr-2" />
-                                        Reject
-                                    </button>
-                                    <button
-                                        onClick={() => handleAction(req.id, 'approve')}
-                                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-                                    >
-                                        <Check className="h-4 w-4 mr-2" />
-                                        Approve
-                                    </button>
+                                    {req.status === 'PENDING' ? (
+                                        <>
+                                            <button
+                                                onClick={() => handleAction(req.id, 'reject')}
+                                                className="flex items-center px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                                            >
+                                                <X className="h-4 w-4 mr-2" />
+                                                Reject
+                                            </button>
+                                            <button
+                                                onClick={() => handleAction(req.id, 'approve')}
+                                                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                                            >
+                                                <Check className="h-4 w-4 mr-2" />
+                                                Approve
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleAction(req.id, 'complete')}
+                                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                        >
+                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            Mark as Done
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
