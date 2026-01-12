@@ -48,7 +48,7 @@ export const createNotification = async (req: Request, res: Response) => {
         });
 
         if (!userExists) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'User not found',
                 errors: ['The specified user_id does not exist']
             });
@@ -80,7 +80,7 @@ export const createNotification = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error creating notification',
             error: String(error)
         });
@@ -127,7 +127,7 @@ export const getNotificationById = async (req: Request, res: Response) => {
 
     // Validasi ID
     if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid notification ID']
         });
@@ -135,14 +135,14 @@ export const getNotificationById = async (req: Request, res: Response) => {
 
     try {
         const notification = await prisma.notification.findFirst({
-            where: { 
+            where: {
                 id: Number(id),
-                user_id: userId 
+                user_id: userId
             }
         });
 
         if (!notification) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Notification not found or you do not have permission to view it'
             });
         }
@@ -167,7 +167,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 
     // Validasi ID
     if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid notification ID']
         });
@@ -180,13 +180,13 @@ export const markAsRead = async (req: Request, res: Response) => {
         });
 
         if (!notification) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Notification not found or you do not have permission to update it'
             });
         }
 
         if (notification.is_read) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Notification is already marked as read'
             });
         }
@@ -196,7 +196,7 @@ export const markAsRead = async (req: Request, res: Response) => {
             data: { is_read: true }
         });
 
-        res.json({ 
+        res.json({
             message: 'Notification marked as read successfully',
             data: updated
         });
@@ -219,7 +219,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
             data: { is_read: true }
         });
 
-        res.json({ 
+        res.json({
             message: 'All notifications marked as read successfully',
             updatedCount: result.count
         });
@@ -239,7 +239,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
 
     // Validasi ID
     if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             message: 'Validation failed',
             errors: ['Invalid notification ID']
         });
@@ -251,22 +251,27 @@ export const deleteNotification = async (req: Request, res: Response) => {
         });
 
         if (!notification) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'Notification not found or you do not have permission to delete it'
             });
+        }
+
+        // Only allow deletion if notification is read
+        if (!notification.is_read) {
+            return res.status(400).json({ message: 'Cannot delete unread notifications' });
         }
 
         await prisma.notification.delete({
             where: { id: Number(id) }
         });
 
-        res.json({ 
+        res.json({
             message: 'Notification deleted successfully',
             deletedId: Number(id)
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error deleting notification',
             error: String(error)
         });
@@ -286,12 +291,12 @@ export const deleteAllRead = async (req: Request, res: Response) => {
             where: { user_id: userId, is_read: true }
         });
 
-        res.json({ 
+        res.json({
             message: 'All read notifications deleted successfully',
             deletedCount: result.count
         });
     } catch (error) {
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error deleting notifications',
             error: String(error)
         });

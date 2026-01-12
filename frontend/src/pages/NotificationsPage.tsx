@@ -203,14 +203,16 @@ const NotificationsPage = () => {
                                             <Check className="h-4 w-4" />
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => setDeleteId(notification.id)}
-                                        disabled={deleting}
-                                        className="text-gray-400 hover:text-red-600 p-1 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    {notification.is_read && (
+                                        <button
+                                            onClick={() => setDeleteId(notification.id)}
+                                            disabled={deleting}
+                                            className="text-gray-400 hover:text-red-600 p-1 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
