@@ -12,7 +12,7 @@ router.get('/my', requireRole(['STUDENT']), getMySessions);
 router.put('/:id/reschedule', requireRole(['STUDENT']), rescheduleSession);
 router.put('/:id', cancelSession); // Both student and counselor can cancel
 router.delete('/history', requireRole(['STUDENT', 'COUNSELOR']), deleteSessionHistory);
-router.delete('/:id', requireRole(['STUDENT']), deleteSession);
+router.delete('/:id', requireRole(['STUDENT', 'COUNSELOR']), deleteSession);
 router.get('/:id/chat', async (req, res) => {
     const { id } = req.params;
     const userId = req.user?.id;

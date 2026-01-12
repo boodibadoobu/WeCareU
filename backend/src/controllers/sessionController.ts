@@ -261,16 +261,30 @@ export const cancelSession = async (req: Request, res: Response) => {
     }
 };
 
-// Delete Session (Student)
+// Delete Session (Student & Counselor)
 export const deleteSession = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const studentId = req.user?.id;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
 
     try {
         const session = await prisma.session.findUnique({ where: { id: Number(id) } });
 
-        if (!session || session.student_id !== studentId) {
-            return res.status(404).json({ message: 'Session not found or unauthorized' });
+        if (!session) {
+            return res.status(404).json({ message: 'Session not found' });
+        }
+
+        // Verify ownership based on role
+        if (userRole === 'STUDENT') {
+            if (session.student_id !== userId) {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+        } else if (userRole === 'COUNSELOR') {
+            if (session.counselor_id !== userId) {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+        } else {
+            return res.status(403).json({ message: 'Unauthorized role' });
         }
 
         // Only allow deletion of inactive sessions (history)
