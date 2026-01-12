@@ -19,6 +19,7 @@ const ChatPage = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [status, setStatus] = useState<string>('');
     const [newMessage, setNewMessage] = useState('');
+    const [loading, setLoading] = useState(true);
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -69,16 +70,19 @@ const ChatPage = () => {
 
     const fetchHistory = async () => {
         try {
+            setLoading(true);
             const res = await api.get(`/sessions/${id}/chat`);
             // Handle both old format (array) and new format (object) just in case
             if (Array.isArray(res.data)) {
                 setMessages(res.data);
             } else {
-                setMessages(res.data.messages);
+                setMessages(res.data.messages || []);
                 setStatus(res.data.status);
             }
         } catch (err) {
             console.error('Failed to fetch chat history', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -113,22 +117,30 @@ const ChatPage = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg) => {
-                    const isMe = msg.sender_id === user?.id;
-                    return (
-                        <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-lg px-4 py-2 ${isMe ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                {!isMe && <p className="text-xs font-medium mb-1 text-gray-500">{msg.sender.full_name}</p>}
-                                <p>{msg.message_text}</p>
-                                <p className={`text-xs mt-1 ${isMe ? 'text-green-100' : 'text-gray-400'}`}>
-                                    {new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
-                <div ref={messagesEndRef} />
+                {loading ? (
+                    <div className="flex justify-center items-center h-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                    </div>
+                ) : (
+                    <>
+                        {messages.map((msg) => {
+                            const isMe = msg.sender_id === user?.id;
+                            return (
+                                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[70%] rounded-lg px-4 py-2 ${isMe ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                        {!isMe && <p className="text-xs font-medium mb-1 text-gray-500">{msg.sender?.full_name || 'Unknown'}</p>}
+                                        <p>{msg.message_text}</p>
+                                        <p className={`text-xs mt-1 ${isMe ? 'text-green-100' : 'text-gray-400'}`}>
+                                            {new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </>
+                )}
             </div>
 
             {status === 'COMPLETED' ? (
